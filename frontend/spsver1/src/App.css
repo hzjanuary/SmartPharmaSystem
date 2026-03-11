@@ -25,6 +25,85 @@ body {
     color: var(--text-dark);
 }
 
+/* --- layout reset & full-page fix --- */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background: var(--bg-light);
+  overflow-x: hidden; /* tạm ẩn overflow ngang nếu có phần tử tràn */
+}
+
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+/* Container mặc định: chiếm toàn bộ chiều ngang.
+   Nếu bạn có chỗ muốn căn giữa nội dung, dùng .container-centered */
+.container {
+  width: 100%;
+  max-width: none; /* bỏ giới hạn cũ */
+  padding: 0 18px;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+/* Tùy chọn: container có nội dung căn giữa (nếu cần) */
+.container-centered {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 18px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Header/Banner/Product area: đảm bảo responsive và không có margin lớn */
+header, .banner, .main, .product-section {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Nếu banner cần full-bleed (ra tới mép viewport) */
+.banner.full-bleed {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+/* Product grid responsive: chia đều, không cố định chiều rộng container */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Product card: tránh fixed height lớn */
+.product-card {
+  background: var(--white);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 160px;
+}
+
+/* Ảnh: luôn responsive và không phá layout */
+.product-card img, .banner img {
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 /* --- 2. LAYOUT CHUNG & CONTAINER --- */
 .container {
     max-width: 1200px;
@@ -136,9 +215,19 @@ nav ul li a:hover { color: var(--primary-blue); }
 }
 .buy-btn:hover { background: var(--primary-blue); color: white; }
 
+.product-card img, .banner img, .product-grid img {
+  width: 100%;
+  max-width: 100%;
+  height: 180px;
+  object-fit: contain; /* giữ tỉ lệ, tránh kéo giãn layout */
+  display: block;
+}
+
 /* --- 4. GIAO DIỆN QUẢN TRỊ (Sidebar & Dashboard) --- */
 /* Layout Admin: Body cần dán thêm class .admin-page nếu dùng chung CSS */
-.admin-body { display: flex; height: 100vh; overflow: hidden; }
+.admin-body {
+    display: flex;
+    min-height: 100vh; 
 
 .sidebar {
     width: 260px;
@@ -178,6 +267,7 @@ nav ul li a:hover { color: var(--primary-blue); }
     flex: 1;
     padding: 25px;
     overflow-y: auto;
+    min-height: 0; /* cần để con overflow-y hoạt động trong flex container */
 }
 
 /* Dashboard Stats */
@@ -197,7 +287,8 @@ nav ul li a:hover { color: var(--primary-blue); }
     border-collapse: collapse;
     background: var(--white);
     border-radius: 10px;
-    overflow: hidden;
+    overflow: auto; /* allow horizontal scroll */
+    display: block; /* cho phép scroll ngang khi cần */
 }
 
 .admin-table th, .admin-table td {
@@ -233,11 +324,16 @@ nav ul li a:hover { color: var(--primary-blue); }
     background: var(--white);
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    display: none;
+    display: none; /* hidden by default */
     flex-direction: column;
     z-index: 9999;
     overflow: hidden;
     border: 1px solid #eee;
+}
+
+/* Khi body có class chat-open thì hiện chat window */
+.chat-open #chat-window {
+    display: flex;
 }
 
 .chat-header {
@@ -286,4 +382,37 @@ footer {
     padding: 30px 0;
     text-align: center;
     margin-top: 40px;
+}
+
+/* Form/cảnh báo lỗi: style cơ bản để form không bị tràn hoặc che khuất */
+.form-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--white);
+    padding: 18px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.03);
+}
+
+.form-row { margin-bottom: 12px; }
+.form-row label { display: block; margin-bottom: 6px; color: var(--text-gray); font-size: 13px; }
+.form-row input, .form-row select, .form-row textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dcdcdc;
+    border-radius: 6px;
+    outline: none;
+    background: #fff;
+}
+
+/* Thông báo lỗi form */
+.form-error {
+    color: var(--danger);
+    background: #fff1f0;
+    border: 1px solid rgba(231,76,60,0.1);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-top: 6px;
+}
 }
