@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import Chatbot from '../components/Chatbot';
 import SalesChart from '../components/SalesChart';
@@ -36,7 +36,7 @@ const DashboardPage = () => {
 
   const toggleChat = () => setIsChatOpen(!isChatOpen);
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     const loadSummary = async () => {
       try {
         const response = await fetch(`${BACKEND_URL}/api/dashboard/summary`);
@@ -74,6 +74,10 @@ const DashboardPage = () => {
     loadSummary();
     loadFefo();
   }, [BACKEND_URL, AI_URL]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const getRiskStyle = (riskLevel) => {
     if (riskLevel === 'EXPIRED') {
@@ -116,9 +120,28 @@ const DashboardPage = () => {
       <Sidebar toggleChat={toggleChat} />
 
       <div className="main-admin">
-        <div className="header-title" style={{ marginBottom: '25px' }}>
-          <h1 style={{ color: 'var(--primary-blue)' }}>Tổng quan báo cáo</h1>
-          <p style={{ color: 'var(--text-gray)', fontSize: '14px' }}>Cập nhật dữ liệu thời gian thực</p>
+        <div className="header-title" style={{ marginBottom: '25px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ color: 'var(--primary-blue)' }}>Tổng quan báo cáo</h1>
+            <p style={{ color: 'var(--text-gray)', fontSize: '14px' }}>Cập nhật dữ liệu thời gian thực</p>
+          </div>
+          <button 
+            onClick={fetchData} 
+            style={{ 
+              background: 'white', 
+              color: 'var(--primary-blue)', 
+              border: '1px solid var(--primary-blue)',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <i className="fa fa-sync-alt"></i> Làm mới
+          </button>
         </div>
 
         {/* Ba thẻ thống kê */}

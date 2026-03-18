@@ -25,27 +25,30 @@ const dashboardController = {
       const [newOrdersRows] = await db.query(
         `
         SELECT COUNT(*) AS new_orders
-        FROM history_import
-        WHERE YEARWEEK(created_at, 1) = YEARWEEK(CURDATE(), 1)
+        FROM history_import hi
+        JOIN product p ON hi.product_id = p.product_id
+        WHERE p.status = 1 AND YEARWEEK(hi.created_at, 1) = YEARWEEK(CURDATE(), 1)
         `
       );
 
       const [monthlyImportRows] = await db.query(
         `
-        SELECT COALESCE(SUM(quantity), 0) AS monthly_import
-        FROM history_import
-        WHERE YEAR(created_at) = YEAR(CURDATE())
-          AND MONTH(created_at) = MONTH(CURDATE())
+        SELECT COALESCE(SUM(hi.quantity), 0) AS monthly_import
+        FROM history_import hi
+        JOIN product p ON hi.product_id = p.product_id
+        WHERE p.status = 1 AND YEAR(hi.created_at) = YEAR(CURDATE())
+          AND MONTH(hi.created_at) = MONTH(CURDATE())
         `
       );
 
       const [weeklySeriesRows] = await db.query(
         `
-        SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS day_str, COALESCE(SUM(quantity), 0) AS qty
-        FROM history_import
-        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY DATE(created_at)
-        ORDER BY DATE(created_at)
+        SELECT DATE_FORMAT(hi.created_at, '%Y-%m-%d') AS day_str, COALESCE(SUM(hi.quantity), 0) AS qty
+        FROM history_import hi
+        JOIN product p ON hi.product_id = p.product_id
+        WHERE p.status = 1 AND hi.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        GROUP BY DATE(hi.created_at)
+        ORDER BY DATE(hi.created_at)
         `
       );
 

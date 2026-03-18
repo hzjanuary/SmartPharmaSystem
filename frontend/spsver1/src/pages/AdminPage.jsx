@@ -127,9 +127,13 @@ const AdminPage = () => {
           setProducts((prev) => prev.filter((p) => p.product_id !== productId));
           btn.classList.remove('btn-exploding');
         }, 520);
+      } else {
+        const result = await response.json();
+        alert(result.message || "Xóa sản phẩm thất bại!");
       }
     } catch (error) {
       console.error("Lỗi xóa sản phẩm:", error);
+      alert("Đã xảy ra lỗi kết nối!");
     }
   };
 
@@ -191,7 +195,26 @@ const AdminPage = () => {
       <div className="main-admin">
         <div className="header-row">
           <h1 className="page-title">Danh mục hàng hóa</h1>
-          <button className="add-btn" onClick={() => openModal()}>+ Thêm sản phẩm</button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={fetchAll} 
+              style={{ 
+                background: 'white', 
+                color: 'var(--primary-blue)', 
+                border: '1px solid var(--primary-blue)',
+                padding: '8px 16px',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <i className="fa fa-sync-alt"></i> Làm mới
+            </button>
+            <button className="add-btn" onClick={() => openModal()}>+ Thêm sản phẩm</button>
+          </div>
         </div>
 
         <div className="table-wrap">

@@ -51,9 +51,29 @@ const productController = {
                 description
             ]);
 
+            const newProductId = result.insertId;
+
+            // Nếu tạo mới sản phẩm mà có khai báo số lượng nhập ban đầu lớn hơn 0, ta cũng ghi nhận vào lịch sử nhập kho
+            if (quantity && Number(quantity) > 0) {
+                const insertHistorySql = `
+                    INSERT INTO history_import
+                    (product_id, product_name, category_id, unit, purchase_price, quantity, image, description)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'Nhập kho ban đầu khi tạo sản phẩm')
+                `;
+                await db.query(insertHistorySql, [
+                    newProductId,
+                    product_name,
+                    category_id,
+                    unit,
+                    purchase_price,
+                    quantity,
+                    image
+                ]);
+            }
+
             res.status(201).json({
                 message: "Thêm sản phẩm thành công!",
-                product_id: result.insertId
+                product_id: newProductId
             });
 
         } catch (error) {
@@ -160,22 +180,37 @@ const productController = {
         }
     },
 
-    // 4. DELETE PRODUCT (Soft delete)
+    // 4. DELETE PRODUCT (Hard delete)
     delete: async (req, res) => {
         try {
             const { id } = req.params;
             
-            // Nếu bạn muốn xóa hẳn file ảnh khi xóa sản phẩm, hãy gọi deleteFile ở đây.
-            // Nhưng vì đây là Soft Delete (status=0), nên chúng ta cứ giữ lại ảnh.
+            // Bước 1: Lấy tên file ảnh để chuẩn bị xóa ảnh khỏi ổ cứng
+            const [productRows] = await db.query("SELECT image FROM product WHERE product_id = ?", [id]);
+            if (productRows.length === 0) {
+                return res.status(404).json({ message: "Sản phẩm không tồn tại!" });
+            }
+            const imageName = productRows[0].image;
 
-            const sql = `UPDATE product SET status = 0 WHERE product_id = ?`;
+            // Bước 2: Xóa record khỏi database (Hard delete)
+            const sql = `DELETE FROM product WHERE product_id = ?`;
             const [result] = await db.query(sql, [id]);
 
             if (result.affectedRows === 0) {
                 return res.status(404).json({ message: "Sản phẩm không tồn tại!" });
             }
-            res.status(200).json({ message: "Đã ngừng bán sản phẩm!" });
+
+            // Bước 3: Chỉ xóa ảnh khi database đã được xóa thành công và file không phải là URL ngoài
+            if (imageName && !imageName.startsWith('http')) {
+                deleteFile(imageName);
+            }
+
+            res.status(200).json({ message: "Đã xóa sản phẩm thành công!" });
         } catch (error) {
+            // Nếu có lỗi ràng buộc khoá ngoại, trả về lỗi báo cho FE
+            if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+                return res.status(400).json({ message: "Không thể xóa do sản phẩm đã phát sinh lịch sử xuất/nhập kho!" });
+            }
             res.status(500).json({ error: error.message });
         }
     }
