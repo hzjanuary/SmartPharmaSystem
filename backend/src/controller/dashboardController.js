@@ -10,14 +10,6 @@ const getRiskLevel = (daysLeft) => {
 const dashboardController = {
   summary: async (req, res) => {
     try {
-      const [weeklyRevenueRows] = await db.query(
-        `
-        SELECT COALESCE(SUM(hi.quantity * COALESCE(p.selling_price, hi.purchase_price, 0)), 0) AS weekly_revenue
-        FROM history_import hi
-        LEFT JOIN product p ON p.product_id = hi.product_id
-        WHERE YEARWEEK(hi.created_at, 1) = YEARWEEK(CURDATE(), 1)
-        `
-      );
 
       const [expiringRows] = await db.query(
         `
@@ -49,7 +41,7 @@ const dashboardController = {
 
       const [weeklySeriesRows] = await db.query(
         `
-        SELECT DATE(created_at) AS day, COALESCE(SUM(quantity), 0) AS qty
+        SELECT DATE_FORMAT(created_at, '%Y-%m-%d') AS day_str, COALESCE(SUM(quantity), 0) AS qty
         FROM history_import
         WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
         GROUP BY DATE(created_at)
@@ -72,17 +64,23 @@ const dashboardController = {
 
       const byDay = new Map();
       weeklySeriesRows.forEach((row) => {
-        const key = new Date(row.day).toISOString().slice(0, 10);
-        byDay.set(key, Number(row.qty) || 0);
+        byDay.set(row.day_str, Number(row.qty) || 0);
       });
 
       const chartLabels = [];
       const chartValues = [];
+      
+      const toLocalYYYYMMDD = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+
       for (let i = 6; i >= 0; i -= 1) {
         const d = new Date();
-        d.setHours(0, 0, 0, 0);
         d.setDate(d.getDate() - i);
-        const key = d.toISOString().slice(0, 10);
+        const key = toLocalYYYYMMDD(d);
         chartLabels.push(d.toLocaleDateString('vi-VN', { weekday: 'short' }));
         chartValues.push(byDay.get(key) || 0);
       }
@@ -100,7 +98,6 @@ const dashboardController = {
 
       return res.status(200).json({
         stats: {
-          weekly_revenue: Number(weeklyRevenueRows?.[0]?.weekly_revenue || 0),
           expiring_products: Number(expiringRows?.[0]?.expiring_products || 0),
           new_orders: Number(newOrdersRows?.[0]?.new_orders || 0),
           monthly_import: Number(monthlyImportRows?.[0]?.monthly_import || 0),

@@ -11,7 +11,6 @@ const DashboardPage = () => {
   const [fefoError, setFefoError] = useState('');
   const [summary, setSummary] = useState({
     stats: {
-      weekly_revenue: 0,
       expiring_products: 0,
       new_orders: 0,
       monthly_import: 0,
@@ -122,12 +121,8 @@ const DashboardPage = () => {
           <p style={{ color: 'var(--text-gray)', fontSize: '14px' }}>Cập nhật dữ liệu thời gian thực</p>
         </div>
 
-        {/* Bốn thẻ thống kê */}
+        {/* Ba thẻ thống kê */}
         <div className="stats-grid">
-          <div className="stat-card">
-            <h3>Doanh thu tuần</h3>
-            <p>{formatCurrency(summary.stats.weekly_revenue)}đ</p>
-          </div>
           <div className="stat-card">
             <h3>Sản phẩm sắp hết hạn</h3>
             <p style={{ color: 'var(--danger)' }}>{summary.stats.expiring_products}</p>
