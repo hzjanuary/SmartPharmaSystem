@@ -1,42 +1,3 @@
-// require('dotenv').config();
-// const express = require("express");
-// const session = require('express-session');
-// const cookieParser = require('cookie-parser');
-// const cors = require("cors");
-// const route = require("./route/index");
-
-// const app = express();
-// const port = process.env.PORT;
-
-// //  // Cho phép Frontend (Vite) truy cập vào Backend
-// app.use(cors({
-//     origin: 'http://localhost:3000', // URL của bạn frontend
-//     credentials: true // Cho phép gửi cookie qua lại
-// }));
-
-// app.use(cookieParser());
-
-// app.use(session({
-//     secret: 'secret_key_cua_ban', // Chuỗi bí mật để mã hóa ID session
-//     resave: false,
-//     saveUninitialized: false,
-//     cookie: {
-//         secure: false, // Để false nếu dùng http, true nếu dùng https
-//         httpOnly: true, // Bảo mật: JS frontend không đọc được cookie này
-//         maxAge: 24 * 60 * 60 * 1000 // Thời gian : 1 ngày
-//     }
-// }));
-
-
-// app.use(express.json());
-
-// // Khởi tạo các Route
-// route(app);
-
-// app.listen(port, () => {
-//     console.log(`🚀 Server pharmacy chạy tại http://localhost:${port}`);
-// });
-
 require('dotenv').config();
 const express = require("express");
 const session = require('express-session');
@@ -47,8 +8,8 @@ const db = require('./config/db'); // Đảm bảo đường dẫn tới file co
 const route = require("./route/index");
 
 const app = express();
-const port = process.env.PORT || 5000;
-const frontendOrigin = process.env.FRONTEND_ORIGIN || 'http://localhost:3000';
+const port = process.env.PORT ;
+const frontendOrigin = process.env.FRONTEND_ORIGIN ;
 
 const path = require('path');
 // ... các dòng require khác

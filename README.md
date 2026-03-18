@@ -71,7 +71,7 @@ npm start
 ```bash
 cd frontend/spsver1
 npm install
-npm run dev -- --host 0.0.0.0 --port 3000
+npm run dev 
 ```
 
 ### AI Service

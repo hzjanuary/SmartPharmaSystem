@@ -1,18 +1,13 @@
-const express = require('express');
-const router = express.Router();
-const Middleware = require('../middleware/authMiddleware');
-const product_categoryController = require('../controller/product_categoryController');
+const router = require('express').Router();
+const product_category = require('../controller/product_categoryController');
+const auth = require('../middleware/authMiddleware');
 
-// CREATE
-router.post('/', product_categoryController.create);
+// ai login cũng xem được
+router.get('/', auth.verifyLogin, product_category.read);
 
-// READ - Lấy tất cả danh mục sản phẩm
-router.get('/', product_categoryController.read);
-
-// UPDATE
-router.put('/:id', product_categoryController.update);
-
-// DELETE
-router.delete('/:id', product_categoryController.delete);
+// chỉ manager
+router.post('/', auth.verifyLogin, auth.verifyManager, product_category.create);
+router.put('/:id', auth.verifyLogin, auth.verifyManager, product_category.update);
+router.delete('/:id', auth.verifyLogin, auth.verifyManager, product_category.delete);
 
 module.exports = router;
