@@ -18,7 +18,7 @@ Luồng chính:
 - Chatbot gọi Backend `:5000/api/chat/message`, Backend proxy sang AI Service `:8000/api/v1/chat`
 - Backend + AI cùng đọc chung DB XAMPP để đồng bộ với phpMyAdmin
 
-## 2.1 Cấu hình Google LLM API Key cho AI Service
+## 2. Cấu hình Google LLM API Key cho AI Service
 Mục tiêu: cấp `GEMINI_API_KEY` để endpoint chatbot hoạt động.
 
 1. Tạo file môi trường cho AI Service từ file mẫu:
@@ -45,7 +45,7 @@ Lưu ý:
 - `docker-compose.yml` đã dùng `env_file: ./ai-service/.env` cho service `ai-service`.
 - Nếu thiếu key, endpoint `POST /api/v1/chat` sẽ trả lỗi 500 (`GEMINI_API_KEY is not configured`).
 
-## 2. Chạy nhanh bằng Docker (khuyến nghị)
+## 2.1 Chạy nhanh bằng Docker (khuyến nghị)
 Yêu cầu:
 - Docker Desktop đang chạy
 
