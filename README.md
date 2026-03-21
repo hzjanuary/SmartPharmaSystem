@@ -3,7 +3,7 @@
 Hệ thống quản lý dược phẩm gồm:
 - Frontend React (Vite)
 - Backend Node.js/Express (Auth + Product API)
-- AI Service FastAPI (FEFO recommendation)
+- AI Service FastAPI (FEFO recommendation + Gemini chatbot)
 - MySQL (XAMPP)
 
 ## 1. Kiến trúc và cổng dịch vụ
@@ -15,7 +15,35 @@ Hệ thống quản lý dược phẩm gồm:
 Luồng chính:
 - `Login/Register` gọi Backend `:5000`
 - Dashboard FEFO gọi AI Service `:8000`
+- Chatbot gọi Backend `:5000/api/chat/message`, Backend proxy sang AI Service `:8000/api/v1/chat`
 - Backend + AI cùng đọc chung DB XAMPP để đồng bộ với phpMyAdmin
+
+## 2.1 Cấu hình Google LLM API Key cho AI Service
+Mục tiêu: cấp `GEMINI_API_KEY` để endpoint chatbot hoạt động.
+
+1. Tạo file môi trường cho AI Service từ file mẫu:
+```bash
+cp ai-service/.env.example ai-service/.env
+```
+
+2. Mở file `ai-service/.env` và điền API key thật:
+```env
+GEMINI_API_KEY=YOUR_REAL_GOOGLE_API_KEY
+```
+
+3. (Tuỳ chọn) chọn model nếu muốn override:
+```env
+GEMINI_MODEL=gemini-flash-latest
+```
+
+4. Khởi động lại AI service sau khi cập nhật `.env`:
+```bash
+docker compose up -d --build ai-service
+```
+
+Lưu ý:
+- `docker-compose.yml` đã dùng `env_file: ./ai-service/.env` cho service `ai-service`.
+- Nếu thiếu key, endpoint `POST /api/v1/chat` sẽ trả lỗi 500 (`GEMINI_API_KEY is not configured`).
 
 ## 2. Chạy nhanh bằng Docker (khuyến nghị)
 Yêu cầu:
@@ -115,6 +143,30 @@ Risk level:
 - `MEDIUM`: `31..90`
 - `LOW`: `> 90`
 
+## 4.1 Chatbot AI API
+### `POST /api/v1/chat` (AI Service)
+- Nhận tin nhắn từ backend và trả lời tiếng Việt theo vai trò Trợ lý dược phẩm SPS.
+- Có function-calling để truy vấn dữ liệu thật từ bảng `product` (SKU, tồn kho, hạn dùng, ngày nhập `created_at`).
+
+Input:
+```json
+{
+	"message": "Ton kho va ngay nhap hang cua P001"
+}
+```
+
+Output:
+```json
+{
+	"reply": "..."
+}
+```
+
+### `POST /api/chat/message` (Backend)
+- Route dành cho frontend chat.
+- Bắt buộc đã đăng nhập (session/cookie).
+- Backend sẽ proxy request sang `http://ai-service:8000/api/v1/chat` trong môi trường Docker.
+
 ## 5. CORS và bảo mật demo
 - AI Service chỉ cho phép origin: `http://localhost:3000`
 - Backend CORS dùng biến `FRONTEND_ORIGIN` (mặc định `http://localhost:3000`)
@@ -123,6 +175,8 @@ Risk level:
 ### AI Service
 - File mẫu: `ai-service/.env.example`
 - Biến chính:
+	- `GEMINI_API_KEY`
+	- `GEMINI_MODEL` (tuỳ chọn)
 	- `DATABASE_URL`
 	- `CORS_ORIGIN`
 
