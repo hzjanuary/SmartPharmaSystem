@@ -4,12 +4,14 @@ Hệ thống quản lý dược phẩm gồm:
 - Frontend React (Vite)
 - Backend Node.js/Express (Auth + Product API)
 - AI Service FastAPI (FEFO recommendation + Gemini chatbot)
+- SPS Agent Telegram Bot (Admin assistant)
 - MySQL (XAMPP)
 
 ## 1. Kiến trúc và cổng dịch vụ
 - Frontend: `http://localhost:3000`
 - Backend (Auth/API): `http://localhost:5000`
 - AI Service (FEFO): `http://localhost:8000`
+- SPS Agent: chạy nội bộ qua Docker service `sps-agent`
 - MySQL host (XAMPP): `127.0.0.1:3306`
 
 Luồng chính:
@@ -172,6 +174,14 @@ Output:
 - Backend CORS dùng biến `FRONTEND_ORIGIN` (mặc định `http://localhost:3000`)
 
 ## 6. Cấu hình môi trường
+### Biến .env chung cho Docker Compose
+- `TELEGRAM_BOT_TOKEN`
+- `ADMIN_CHAT_ID`
+- `GEMINI_API_KEY`
+- `DATABASE_URL`
+
+Bạn có thể copy file `.env.example` ở thư mục gốc thành `.env` để dùng chung cho các service khi chạy `docker compose`.
+
 ### AI Service
 - File mẫu: `ai-service/.env.example`
 - Biến chính:
@@ -187,6 +197,15 @@ Output:
 	- `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME`, `DB_PORT`
 	- `SESSION_SECRET`
 	- `FRONTEND_ORIGIN`
+
+### SPS Agent (Telegram)
+- File mẫu: `sps-agent/.env.example`
+- Biến chính:
+	- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_OWNER_ID`
+	- `ADMIN_CHAT_ID`
+	- `GEMINI_API_KEY`, `GEMINI_MODEL`, `MAX_TOKENS`
+	- `DATABASE_URL`
+	- `AGENT_NAME`, `SHORT_TERM_LIMIT`
 
 ## 7. Lưu ý khi dùng XAMPP MySQL
 - DB được dùng trực tiếp từ XAMPP, không có container DB riêng.
@@ -212,4 +231,27 @@ Output:
 
 ### Backend báo thiếu bảng `user`
 - Chưa init DB schema. Chạy lại mục reset DB hoặc apply script SQL thủ công.
+
+## 9. SPS Agent Admin Assistant
+SPS Agent là bot Telegram dành cho Admin, chạy bằng service `sps-agent` và đọc trực tiếp dữ liệu kho qua MySQL (XAMPP).
+
+### 9.1 Chức năng chính
+- Truy vấn tồn kho/hạn dùng qua `check_inventory`
+- Tra cứu SKU qua `search_sku`
+- Đếm loại hàng qua `count_product_types`
+- Tìm sản phẩm từ web và thêm nhanh vào kho qua `find_and_add_product_from_web`
+- Đọc schema cột của bảng qua `describe_table_fields`
+- Đọc dữ liệu chi tiết theo trường qua `read_table_field_details`
+- Lấy hồ sơ đầy đủ sản phẩm (join category) qua `get_product_full_profile`
+
+### 9.2 Cách test nhanh trên Telegram
+Gửi các câu như sau cho bot:
+- "Hiện tại trong database có bao nhiêu loại hàng?"
+- "Cho tôi schema bảng product"
+- "Lấy hồ sơ đầy đủ SKU P001"
+- "Lên mạng tìm 1 sản phẩm thuốc giảm đau và thêm vào kho"
+
+### 9.3 Lưu ý bảo mật
+- Không commit các file `.env`.
+- Nếu token Telegram hoặc Gemini key bị lộ, phải rotate key/token và restart container.
 

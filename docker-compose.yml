@@ -7,12 +7,12 @@ services:
     env_file:
       - ./ai-service/.env
     environment:
-      DATABASE_URL: mysql+pymysql://root@host.docker.internal:3306/pharmacymanagement
-      CORS_ORIGIN: http://localhost:3000
+      DATABASE_URL: ${DATABASE_URL:-mysql+pymysql://root@host.docker.internal:3306/pharmacymanagement}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
     ports:
       - "8000:8000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    networks:
+      - sps-network
 
   backend:
     build:
@@ -20,21 +20,23 @@ services:
     container_name: smartpharma_backend
     restart: unless-stopped
     environment:
-      PORT: 5000
-      DB_HOST: host.docker.internal
-      DB_USER: root
-      DB_PASS: ""
-      DB_NAME: pharmacymanagement
-      DB_PORT: 3306
-      SESSION_SECRET: smartpharma_local_secret
-      FRONTEND_ORIGIN: http://localhost:3000
+      PORT: ${PORT:-5000}
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_USER: ${DB_USER:-root}
+      DB_PASS: ${DB_PASS:-}
+      DB_NAME: ${DB_NAME:-pharmacymanagement}
+      DB_PORT: ${DB_PORT:-3306}
+      SESSION_SECRET: ${SESSION_SECRET:-smartpharma_local_secret}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
       AI_SERVICE_URL: http://ai-service:8000
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      ADMIN_CHAT_ID: ${ADMIN_CHAT_ID:-}
     ports:
       - "5000:5000"
     depends_on:
       - ai-service
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    networks:
+      - sps-network
 
   frontend:
     build:
@@ -48,3 +50,28 @@ services:
     depends_on:
       - ai-service
       - backend
+    networks:
+      - sps-network
+
+  sps-agent:
+    build:
+      context: ./sps-agent
+    container_name: smartpharma_sps_agent
+    restart: unless-stopped
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_OWNER_ID: ${TELEGRAM_OWNER_ID:-0}
+      ADMIN_CHAT_ID: ${ADMIN_CHAT_ID:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      DATABASE_URL: ${DATABASE_URL:-mysql+pymysql://root@host.docker.internal:3306/pharmacymanagement}
+      AGENT_NAME: ${AGENT_NAME:-SPS Agent}
+      SHORT_TERM_LIMIT: ${SHORT_TERM_LIMIT:-10}
+    depends_on:
+      - ai-service
+    networks:
+      - sps-network
+
+networks:
+  sps-network:
+    name: sps-network

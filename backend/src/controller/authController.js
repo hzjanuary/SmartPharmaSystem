@@ -1,5 +1,26 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
+const axios = require('axios');
+
+const notifyAdminLogin = async (employeeName) => {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const adminChatId = process.env.ADMIN_CHAT_ID;
+
+    if (!botToken || !adminChatId) {
+        return;
+    }
+
+    const message = `Nhân viên ${employeeName} vừa đăng nhập vào hệ thống.`;
+
+    try {
+        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            chat_id: adminChatId,
+            text: message,
+        });
+    } catch (error) {
+        console.error('Telegram notification failed:', error.message);
+    }
+};
 
 const authController = {
     // ĐĂNG KÝ (Giữ nguyên logic của bạn, thêm xử lý lỗi tốt hơn)
@@ -50,6 +71,8 @@ const authController = {
                 role: user.role,
                 full_name: user.full_name
             };
+
+            await notifyAdminLogin(user.full_name || user.username);
 
             // Trả về thông tin user để frontend hiển thị (không gửi token nữa)
             const { password: pw, ...info } = user;
