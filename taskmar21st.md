@@ -1,4 +1,4 @@
-# Danh Sách Công Việc Bàn Giao SmartPharma - 21/03
+# Danh Sách Công Việc - 21/03
 
 ## Phạm vi
 - Giữ nguyên logic thông báo đăng nhập Telegram hiện có ở backend.
