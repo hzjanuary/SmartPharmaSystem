@@ -14,14 +14,19 @@ const storage = multer.diskStorage({
 
 // Kiểm tra định dạng file (chỉ cho phép ảnh)
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif/;
+    // Một số trình duyệt có thể gửi part rỗng khi chưa chọn file
+    if (!file || !file.originalname) {
+        return cb(null, false);
+    }
+
+    const allowedTypes = /jpeg|jpg|png|gif|webp|bmp|svg|avif|heic|heif/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const mimetype = /^image\//.test(file.mimetype);
 
     if (extname && mimetype) {
         return cb(null, true);
     } else {
-        cb(new Error('Chỉ cho phép upload file ảnh!'));
+        cb(new Error('Chi cho phep upload file anh hop le (jpg, png, gif, webp, bmp, svg, avif, heic)!'));
     }
 };
 

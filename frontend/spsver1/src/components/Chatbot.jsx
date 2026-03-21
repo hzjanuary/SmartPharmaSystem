@@ -1,31 +1,61 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const Chatbot = ({ isOpen, toggleChat }) => {
   const [messages, setMessages] = useState([
-    { sender: 'bot', text: 'Chào quản trị viên! Bạn muốn tìm kiếm hoặc cập nhật số lượng cho mã sản phẩm nào?' }
+    { sender: 'bot', text: 'Chào quản trị viên! Tôi là Trợ lý dược phẩm SPS. Bạn cần tra cứu tồn kho, SKU, hoặc hạn sử dụng sản phẩm nào?' }
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const chatBodyRef = useRef(null);
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
   // Tự động cuộn xuống cuối khi có tin nhắn mới
   useEffect(() => {
     if (chatBodyRef.current) {
       chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
     }
-  }, [messages, isOpen]);
+  }, [messages, isOpen, isLoading]);
 
-  const handleSendMessage = () => {
-    if (inputValue.trim() === '') return;
+  const handleSendMessage = async () => {
+    const trimmedInput = inputValue.trim();
+    if (trimmedInput === '' || isLoading) return;
 
-    // Thêm tin nhắn của User
-    const newMessages = [...messages, { sender: 'user', text: inputValue }];
+    const newMessages = [...messages, { sender: 'user', text: trimmedInput }];
     setMessages(newMessages);
     setInputValue('');
+    setIsLoading(true);
 
-    // Giả lập Bot phản hồi sau 0.8s
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { sender: 'bot', text: 'Đang kiểm tra tồn kho...' }]);
-    }, 800);
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/chat/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ message: trimmedInput })
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      const fallbackMessage = 'Tôi chưa thể trả lời lúc này. Vui lòng thử lại sau.';
+
+      if (!response.ok) {
+        const errorMessage = payload.message || payload.detail || fallbackMessage;
+        setMessages((prev) => [...prev, { sender: 'bot', text: errorMessage }]);
+        return;
+      }
+
+      const botReply = payload.reply || fallbackMessage;
+      setMessages((prev) => [...prev, { sender: 'bot', text: botReply }]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'bot', text: `Không kết nối được hệ thống chat: ${error.message}` }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -42,7 +72,9 @@ const Chatbot = ({ isOpen, toggleChat }) => {
       <div className="chat-body" ref={chatBodyRef}>
         {messages.map((msg, index) => (
           msg.sender === 'bot' ? (
-            <div key={index} className="bot-msg">{msg.text}</div>
+            <div key={index} className="bot-msg">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+            </div>
           ) : (
             <div key={index} style={{ textAlign: 'right', marginBottom: '10px' }}>
               <span style={{ background: 'var(--primary-blue)', color: 'white', padding: '8px 12px', borderRadius: '10px', display: 'inline-block', fontSize: '13px' }}>
@@ -51,17 +83,21 @@ const Chatbot = ({ isOpen, toggleChat }) => {
             </div>
           )
         ))}
+        {isLoading && (
+          <div className="bot-msg">Bot đang trả lời...</div>
+        )}
       </div>
 
       <div className="chat-footer">
         <input 
           type="text" 
-          placeholder="Nhập mã SKU..." 
+          placeholder="Nhập câu hỏi tồn kho / hạn sử dụng..." 
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyPress={handleKeyPress}
+          disabled={isLoading}
         />
-        <button onClick={handleSendMessage} style={{ border: 'none', background: 'none', color: 'var(--primary-blue)', cursor: 'pointer', paddingLeft: '10px' }}>
+        <button onClick={handleSendMessage} style={{ border: 'none', background: 'none', color: 'var(--primary-blue)', cursor: isLoading ? 'not-allowed' : 'pointer', paddingLeft: '10px' }} disabled={isLoading}>
           <i className="fa fa-paper-plane"></i>
         </button>
       </div>
