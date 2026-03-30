@@ -71,11 +71,28 @@ Mặc định có 2 tài khoản:
 
 ## 5. Chức năng đã có trong phiên bản hiện tại
 - Đăng nhập/đăng xuất bằng session cookie
+- Không còn đăng ký công khai ở trang login
+- Chỉ manager/admin đã đăng nhập mới được tạo tài khoản staff (qua màn Admin)
 - Tách giao diện theo role admin và staff
 - Admin: quản lý user, danh mục, thống kê, backup/restore
 - Staff: dashboard, FEFO, quản lý sản phẩm (thêm/sửa/xóa)
+- Staff: báo cáo xuất kho (ước tính từ nhập kho và tồn hiện tại), hỗ trợ xuất CSV
+- Staff: import CSV danh sách sản phẩm để tạo hàng loạt
 - Backend giữ logic thông báo đăng nhập Telegram
 - AI Service cung cấp API FEFO từ DB
+
+### Định dạng CSV import sản phẩm (Staff)
+Header tối thiểu cần có:
+
+```csv
+product_code,product_name,category_id,unit,purchase_price,selling_price,quantity,expiry_date,image,description
+```
+
+Lưu ý:
+- Cột bắt buộc: `product_code`, `product_name`
+- Có thể dùng `category_id` hoặc `category_name` để map danh mục
+- Hỗ trợ thêm các tên cột tương đương tiếng Việt: `don_vi`, `gia_nhap`, `gia_ban`, `so_luong`, `han_dung`, `hinh_anh`, `mo_ta`
+- File nên dùng dấu phẩy `,` làm phân tách cột và mã sản phẩm không trùng
 
 ## 6. API FEFO chính
 - GET /health
@@ -114,4 +131,5 @@ Một số tool đang dùng:
 - MySQL chưa healthy: backend/ai-service chưa kết nối được DB.
 - Sai FRONTEND_ORIGIN hoặc credential cookie: login được nhưng mất session.
 - Frontend gọi sai endpoint auth: cần dùng backend :5000 cho auth.
+- Gọi `POST /api/auth/register` bị 401/403: cần đăng nhập bằng tài khoản manager/admin trước.
 
