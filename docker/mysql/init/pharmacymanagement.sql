@@ -117,13 +117,6 @@ CREATE TABLE `product` (
 --
 
 INSERT INTO `product` (`product_id`, `product_code`, `product_name`, `category_id`, `unit`, `purchase_price`, `selling_price`, `quantity`, `expiry_date`, `image`, `description`, `created_at`, `status`) VALUES
-(1, NULL, 'Paracetamol 500mg', 1, 'viên', 2500.00, 3500.00, 300, '2027-12-31', 'paracetamol.jpg', 'Thuốc giảm đau hạ sốt cập nhật', '2026-03-09 13:15:42', 0),
-(2, NULL, 'Paracetamol 500mg', 2, 'Vỉ', 5000.00, 8000.00, 200, '2026-06-15', NULL, 'Giảm đau hạ sốt nhanh', '2026-03-09 13:15:42', 0),
-(3, NULL, 'Vitamin C 1000mg', 3, 'Tuýp', 35000.00, 50000.00, 50, '2026-01-20', NULL, 'Viên sủi tăng sức đề kháng', '2026-03-09 13:15:42', 1),
-(4, NULL, 'Khẩu trang N95', 4, 'Hộp', 150000.00, 200000.00, 30, '2029-10-10', NULL, 'Khẩu trang lọc bụi mịn và vi khuẩn', '2026-03-09 13:15:42', 1),
-(5, NULL, 'Paracetamol', 1, 'viên', 2000.00, 3000.00, 100, '2027-12-31', 'paracetamol.jpg', 'Thuốc giảm đau hạ sốt', '2026-03-11 14:49:08', 1),
-(6, 'THUOC001', 'Paracetamol 500mg', 1, 'Viên', 2000.00, 3000.00, 100, '2026-12-31', 'paracetamol.jpg', 'Thuốc giảm đau hạ sốt', '2026-03-11 15:07:05', 1),
-(7, 'K002', 'Test2', 1, 'viên', 2500.00, 3500.00, 200, '2027-12-31', 'paracetamol.jpg', 'Test2', '2026-03-11 15:07:42', 1),
 (8, 'LC0008', 'Cốm lợi khuẩn Lactomin Plus Novarex (30 gói)', 3, 'Hộp', 145000.00, 174000.00, 120, '2027-12-31', NULL, 'Sản phẩm tham chiếu từ nhathuoclongchau.com.vn', '2026-03-12 08:15:00', 1),
 (9, 'LC0009', 'Pregnacare Max Omega 3 DHA (84 viên)', 3, 'Hộp', 470000.00, 550000.00, 60, '2028-06-30', NULL, 'Sản phẩm tham chiếu từ nhathuoclongchau.com.vn', '2026-03-12 08:20:00', 1),
 (10, 'LC0010', 'PediaSure hương vani (800g)', 3, 'Hộp', 650000.00, 688000.00, 55, '2027-11-30', NULL, 'Sản phẩm dinh dưỡng', '2026-03-12 08:30:00', 1),
