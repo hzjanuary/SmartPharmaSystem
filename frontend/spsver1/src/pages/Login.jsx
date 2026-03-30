@@ -1,19 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
+import { saveSessionUser } from '../utils/session';
+import { BACKEND_URL } from '../utils/api';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(''); // Thêm state để hiện lỗi từ server
+  const [errorMsg, setErrorMsg] = useState('');
   
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    setIsLoading(true);
     try {
-      // Gọi API xuống Backend
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -25,28 +28,28 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Nếu Backend trả về thành công (HTTP status 200)
-        console.log("Đăng nhập thành công:", data);
         setHasError(false);
-        // Có thể lưu token hoặc thông tin user vào localStorage ở đây
-        // localStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/qlhh'); 
+        saveSessionUser(data.user);
+        const redirectPath = data?.user?.role === 'manager' ? '/admin' : '/staff';
+        navigate(redirectPath);
       } else {
-        // Nếu sai tài khoản hoặc lỗi (HTTP status 400, 401...)
         setHasError(true);
         setErrorMsg(data.message || 'Thông tin không chính xác!');
       }
     } catch (error) {
-      console.error("Lỗi kết nối server:", error);
       setHasError(true);
       setErrorMsg('Không thể kết nối đến máy chủ!');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="login-page-container">
       <div className="login-card">
-        <h2>Đăng nhập Admin</h2>
+        <p className="login-eyebrow">Smart Pharma System</p>
+        <h2>Đăng nhập hệ thống</h2>
+        <p className="login-subtitle">Hệ thống tự động điều hướng sang trang admin hoặc staff theo vai trò.</p>
         
         <input 
           type="text" 
@@ -70,7 +73,7 @@ const Login = () => {
         
         {hasError && <p className="error-msg">{errorMsg}</p>}
         
-        <button onClick={handleLogin}>Đăng nhập</button>
+        <button onClick={handleLogin} disabled={isLoading}>{isLoading ? 'Đang xử lý...' : 'Đăng nhập'}</button>
 
         <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>
           Chưa có tài khoản? <Link to="/register" style={{ color: 'var(--primary-blue)', textDecoration: 'none', fontWeight: 'bold' }}>Đăng ký ngay</Link>

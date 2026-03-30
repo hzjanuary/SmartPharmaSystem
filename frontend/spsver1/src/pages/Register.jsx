@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
+import { BACKEND_URL } from '../utils/api';
 
 const Register = () => {
   const [fullName, setFullName] = useState('');
@@ -24,13 +25,13 @@ const Register = () => {
 
     try {
       // Gọi API xuống Backend để lưu vào DB
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/register`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ full_name: fullName, username, password }),
+        body: JSON.stringify({ full_name: fullName, username, password, role: 'staff' }),
       });
 
       const data = await response.json();

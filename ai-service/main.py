@@ -588,13 +588,3 @@ def inventory_recommendation_from_db():
     items = [InventoryItem(**item) for item in payload["items"]]
     return build_recommendations(items)
 
-
-@app.post("/api/v1/chat", response_model=ChatResponse)
-def chat_with_inventory_assistant(payload: ChatRequest):
-    try:
-        reply = build_chat_reply(payload.message.strip())
-        return ChatResponse(reply=reply)
-    except ChatContextError as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Chat processing failed: {exc}") from exc

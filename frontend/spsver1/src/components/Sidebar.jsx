@@ -1,31 +1,50 @@
 import React from 'react';
-import { Link } from 'react-router-dom'; // Lệnh import phải nằm ở dòng trên cùng này
+import { NavLink } from 'react-router-dom';
 
-// Nhận prop toggleChat để mở chatbot và activePage để làm sáng menu
-const Sidebar = ({ toggleChat, activePage }) => {
+const Sidebar = ({
+  title = 'Smart Pharma System',
+  subtitle = '',
+  menuItems = [],
+  onLogout,
+}) => {
   return (
-    <div className="sidebar">
-      <h2>Smart Pharma System</h2>
-      
-      {/* Đã thay <a> thành <Link to="..."> và giữ nguyên logic đổi màu */}
-      <Link to="/dashboard" className={`menu-item ${activePage === 'dashboard' ? 'active' : ''}`}>
-        <i className="fa fa-chart-line"></i> Dashboard
-      </Link>
-      
-      <Link to="/qlhh" className={`menu-item ${activePage === 'qlhh' ? 'active' : ''}`}>
-        <i className="fa fa-box"></i> Quản lý hàng hóa
-      </Link>
-      
-      <hr style={{ opacity: 0.1, margin: '15px 0' }} />
-      
-      <Link to="/" className="menu-item" style={{ color: 'var(--danger)' }}>
-        <i className="fa fa-sign-out-alt"></i> Thoát hệ thống
-      </Link>
-
-      <div className="menu-item chatbot-btn" onClick={toggleChat} style={{ cursor: 'pointer' }}>
-        <i className="fa fa-robot"></i> Hỗ trợ quản lý
+    <aside className="app-sidebar">
+      <div className="app-logo">
+        <h2>{title}</h2>
+        {subtitle ? <p>{subtitle}</p> : null}
       </div>
-    </div>
+
+      <div className="menu-stack">
+        {menuItems.map((item) => {
+          if (item.to) {
+            return (
+              <NavLink
+                key={item.key}
+                to={item.to}
+                className={({ isActive }) => `menu-item ${isActive ? 'active' : ''}`}
+              >
+                {item.label}
+              </NavLink>
+            );
+          }
+
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={`menu-button ${item.active ? 'active' : ''}`}
+              onClick={item.onClick}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+
+        <button type="button" className="menu-button menu-danger" onClick={onLogout}>
+          Thoát hệ thống
+        </button>
+      </div>
+    </aside>
   );
 };
 

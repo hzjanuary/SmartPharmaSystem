@@ -1,4 +1,28 @@
 services:
+  mysql:
+    image: mysql:8.4
+    container_name: smartpharma_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_NAME:-pharmacymanagement}
+      MYSQL_USER: ${MYSQL_USER:-smartpharma}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-smartpharma}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init/pharmacymanagement.sql:/docker-entrypoint-initdb.d/01_pharmacymanagement.sql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    networks:
+      - sps-network
+
   ai-service:
     build:
       context: ./ai-service
@@ -7,10 +31,15 @@ services:
     env_file:
       - ./ai-service/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-mysql+pymysql://root@host.docker.internal:3306/pharmacymanagement}
+      DATABASE_URL: ${DATABASE_URL:-mysql+pymysql://smartpharma:smartpharma@mysql:3306/pharmacymanagement}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
     ports:
       - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
       - sps-network
 
@@ -21,9 +50,9 @@ services:
     restart: unless-stopped
     environment:
       PORT: ${PORT:-5000}
-      DB_HOST: ${DB_HOST:-host.docker.internal}
-      DB_USER: ${DB_USER:-root}
-      DB_PASS: ${DB_PASS:-}
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_USER: ${DB_USER:-smartpharma}
+      DB_PASS: ${DB_PASS:-smartpharma}
       DB_NAME: ${DB_NAME:-pharmacymanagement}
       DB_PORT: ${DB_PORT:-3306}
       SESSION_SECRET: ${SESSION_SECRET:-smartpharma_local_secret}
@@ -34,7 +63,12 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - ai-service
+      mysql:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    volumes:
+      - backend_uploads:/app/uploads
     networks:
       - sps-network
 
@@ -45,11 +79,15 @@ services:
     restart: unless-stopped
     environment:
       VITE_API_BASE_URL: http://localhost:5000
+      VITE_BACKEND_URL: http://localhost:5000
+      VITE_AI_URL: http://localhost:8000
     ports:
       - "3000:3000"
     depends_on:
-      - ai-service
-      - backend
+      backend:
+        condition: service_started
+      ai-service:
+        condition: service_started
     networks:
       - sps-network
 
@@ -64,14 +102,21 @@ services:
       ADMIN_CHAT_ID: ${ADMIN_CHAT_ID:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
-      DATABASE_URL: ${DATABASE_URL:-mysql+pymysql://root@host.docker.internal:3306/pharmacymanagement}
+      DATABASE_URL: ${DATABASE_URL:-mysql+pymysql://smartpharma:smartpharma@mysql:3306/pharmacymanagement}
       AGENT_NAME: ${AGENT_NAME:-SPS Agent}
       SHORT_TERM_LIMIT: ${SHORT_TERM_LIMIT:-10}
     depends_on:
-      - ai-service
+      mysql:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
     networks:
       - sps-network
 
 networks:
   sps-network:
     name: sps-network
+
+volumes:
+  mysql_data:
+  backend_uploads:

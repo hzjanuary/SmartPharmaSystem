@@ -47,8 +47,8 @@ const dashboardController = {
         FROM history_import hi
         JOIN product p ON hi.product_id = p.product_id
         WHERE p.status = 1 AND hi.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY DATE(hi.created_at)
-        ORDER BY DATE(hi.created_at)
+        GROUP BY DATE_FORMAT(hi.created_at, '%Y-%m-%d')
+        ORDER BY day_str
         `
       );
 
