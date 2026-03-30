@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-d
 import './App.css';
 
 import Login from './pages/Login';
-import Register from './pages/Register';
 import AdminWorkspace from './pages/AdminWorkspace';
 import StaffWorkspace from './pages/StaffWorkspace';
 import { getSessionUser } from './utils/session';
@@ -35,7 +34,7 @@ function App() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route path="/dashboard" element={<Navigate to="/staff" replace />} />
         <Route path="/qlhh" element={<Navigate to="/admin" replace />} />
         <Route path="/admin" element={<RoleProtectedRoute role="admin" element={<AdminWorkspace />} />} />

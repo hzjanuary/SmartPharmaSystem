@@ -34,6 +34,20 @@ body,
   min-height: 100vh;
 }
 
+.app-shell-admin {
+  background:
+    radial-gradient(circle at 8% 10%, rgba(255, 212, 120, 0.2), transparent 24%),
+    radial-gradient(circle at 85% 20%, rgba(37, 76, 128, 0.28), transparent 30%),
+    linear-gradient(160deg, #0b1422 0%, #111f35 55%, #172a45 100%);
+}
+
+.app-shell-staff {
+  background:
+    radial-gradient(circle at 15% 5%, rgba(143, 223, 169, 0.35), transparent 26%),
+    radial-gradient(circle at 88% 92%, rgba(97, 197, 187, 0.32), transparent 30%),
+    linear-gradient(150deg, #eef8ec 0%, #edf9f7 50%, #f7fbf2 100%);
+}
+
 .app-sidebar {
   width: 286px;
   padding: 24px 16px;
@@ -43,6 +57,16 @@ body,
   top: 0;
   align-self: flex-start;
   min-height: 100vh;
+}
+
+.app-shell-admin .app-sidebar {
+  background: linear-gradient(180deg, #101a2f 0%, #0a1224 48%, #050b16 100%);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.08), 6px 0 24px rgba(0, 0, 0, 0.24);
+}
+
+.app-shell-staff .app-sidebar {
+  background: linear-gradient(180deg, #0c3b40 0%, #0f5552 48%, #1a6a5d 100%);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.12), 6px 0 24px rgba(22, 78, 69, 0.18);
 }
 
 .app-logo {
@@ -102,6 +126,100 @@ body,
 .main-panel {
   flex: 1;
   padding: 26px;
+}
+
+.app-shell-admin .main-panel {
+  color: #e6edf7;
+}
+
+.app-shell-admin .hero p,
+.app-shell-admin .status-msg,
+.app-shell-admin .field label,
+.app-shell-admin .kpi h4 {
+  color: #b4c2d9;
+}
+
+.app-shell-admin .tab {
+  border-color: #385278;
+  background: #1a2b46;
+  color: #dbe7fa;
+}
+
+.app-shell-admin .tab.active {
+  background: linear-gradient(180deg, #d3a542 0%, #b98926 100%);
+  border-color: #b98926;
+  color: #1f1710;
+}
+
+.app-shell-admin .card,
+.app-shell-admin .kpi,
+.app-shell-admin .table-wrap,
+.app-shell-admin .modal-box {
+  background: linear-gradient(160deg, #1a2a43 0%, #142238 100%);
+  border-color: #2e476a;
+  box-shadow: 0 12px 24px rgba(2, 9, 20, 0.35);
+}
+
+.app-shell-admin .data-table,
+.app-shell-admin .field input,
+.app-shell-admin .field select,
+.app-shell-admin .field textarea {
+  background: #101c2f;
+  color: #e7eefb;
+  border-color: #324d74;
+}
+
+.app-shell-admin .data-table th {
+  background: #1e304d;
+  color: #c4d4eb;
+}
+
+.app-shell-admin .data-table td {
+  border-bottom-color: #253d60;
+}
+
+.app-shell-admin .btn-primary {
+  background: linear-gradient(180deg, #dcb253 0%, #b98926 100%);
+  color: #1f1710;
+  box-shadow: 0 8px 20px rgba(171, 126, 33, 0.35);
+}
+
+.app-shell-admin .btn-secondary {
+  border-color: #3a557f;
+  background: #162741;
+  color: #d8e4f8;
+}
+
+.app-shell-staff .card,
+.app-shell-staff .kpi,
+.app-shell-staff .table-wrap,
+.app-shell-staff .modal-box {
+  background: linear-gradient(160deg, #ffffff 0%, #f4fbf7 100%);
+  border-color: #cde7da;
+  box-shadow: 0 10px 22px rgba(25, 95, 79, 0.1);
+}
+
+.app-shell-staff .tab {
+  border-color: #b7ddc9;
+  background: #e8f7ef;
+  color: #1d5f51;
+}
+
+.app-shell-staff .tab.active {
+  background: linear-gradient(180deg, #209f7a 0%, #17795e 100%);
+  border-color: #17795e;
+  color: #fff;
+}
+
+.app-shell-staff .btn-primary {
+  background: linear-gradient(180deg, #2ab48b 0%, #1b8a67 100%);
+  box-shadow: 0 8px 18px rgba(27, 138, 103, 0.25);
+}
+
+.app-shell-staff .btn-secondary {
+  border-color: #b6dfcc;
+  background: #f8fffb;
+  color: #155848;
 }
 
 .hero {

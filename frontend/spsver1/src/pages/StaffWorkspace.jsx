@@ -245,7 +245,7 @@ const StaffWorkspace = () => {
   ];
 
   return (
-    <div className="app-shell">
+    <div className="app-shell app-shell-staff">
       <Sidebar
         title="Smart Pharma Staff"
         subtitle={user ? `Đăng nhập: ${user.username}` : 'Nhân viên kho'}

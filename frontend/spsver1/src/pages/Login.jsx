@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { saveSessionUser } from '../utils/session';
 import { BACKEND_URL } from '../utils/api';
@@ -74,10 +74,6 @@ const Login = () => {
         {hasError && <p className="error-msg">{errorMsg}</p>}
         
         <button onClick={handleLogin} disabled={isLoading}>{isLoading ? 'Đang xử lý...' : 'Đăng nhập'}</button>
-
-        <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>
-          Chưa có tài khoản? <Link to="/register" style={{ color: 'var(--primary-blue)', textDecoration: 'none', fontWeight: 'bold' }}>Đăng ký ngay</Link>
-        </p>
       </div>
     </div>
   );

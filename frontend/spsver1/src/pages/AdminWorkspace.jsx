@@ -411,7 +411,7 @@ const AdminWorkspace = () => {
   ];
 
   return (
-    <div className="app-shell">
+    <div className="app-shell app-shell-admin">
       <Sidebar
         title="Smart Pharma Admin"
         subtitle={currentUser ? `Đăng nhập: ${currentUser.username}` : 'Quản trị hệ thống'}
