@@ -40,6 +40,52 @@ const formatDate = (value) => {
   return date.toLocaleDateString('vi-VN');
 };
 
+const downloadFile = (content, fileName, type) => {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const csvLine = (values) => values.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',');
+
+const parseCsvLine = (line) => {
+  const result = [];
+  let current = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    const next = line[i + 1];
+
+    if (ch === '"') {
+      if (insideQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if (ch === ',' && !insideQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+
+  result.push(current.trim());
+  return result;
+};
+
+const normalizeHeader = (header) =>
+  String(header || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+
 const StaffWorkspace = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -49,6 +95,8 @@ const StaffWorkspace = () => {
 
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
+  const [importHistory, setImportHistory] = useState([]);
+  const [csvImportFile, setCsvImportFile] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -78,6 +126,35 @@ const StaffWorkspace = () => {
     });
     return map;
   }, [categories]);
+
+  const stockOutReportRows = useMemo(() => {
+    const importedByProductId = {};
+
+    importHistory.forEach((row) => {
+      const pid = Number(row.product_id || 0);
+      if (!pid) return;
+      importedByProductId[pid] = (importedByProductId[pid] || 0) + Number(row.quantity || 0);
+    });
+
+    return products
+      .map((item) => {
+        const importedQty = importedByProductId[item.product_id] || 0;
+        const currentQty = Number(item.quantity || 0);
+        const exportedQty = Math.max(importedQty - currentQty, 0);
+
+        return {
+          product_id: item.product_id,
+          product_code: item.product_code || '',
+          product_name: item.product_name || '',
+          unit: item.unit || '',
+          importedQty,
+          currentQty,
+          exportedQty,
+        };
+      })
+      .filter((row) => row.importedQty > 0 || row.exportedQty > 0)
+      .sort((a, b) => b.exportedQty - a.exportedQty);
+  }, [importHistory, products]);
 
   const setMessage = (text, isError = false) => {
     setStatus({ text, isError });
@@ -128,11 +205,21 @@ const StaffWorkspace = () => {
     }
   }, []);
 
+  const loadImportHistory = useCallback(async () => {
+    try {
+      const payload = await requestJson(`${BACKEND_URL}/api/history_import`);
+      setImportHistory(Array.isArray(payload) ? payload : []);
+    } catch (error) {
+      setImportHistory([]);
+      setMessage(`Không tải được lịch sử nhập kho: ${error.message}`, true);
+    }
+  }, []);
+
   const loadAll = useCallback(async () => {
     setIsWorking(true);
-    await Promise.all([loadSummary(), loadFefo(), loadProducts(), loadCategories()]);
+    await Promise.all([loadSummary(), loadFefo(), loadProducts(), loadCategories(), loadImportHistory()]);
     setIsWorking(false);
-  }, [loadCategories, loadFefo, loadProducts, loadSummary]);
+  }, [loadCategories, loadFefo, loadImportHistory, loadProducts, loadSummary]);
 
   useEffect(() => {
     loadAll();
@@ -239,9 +326,141 @@ const StaffWorkspace = () => {
     }
   };
 
+  const handleExportStockOutReport = () => {
+    if (stockOutReportRows.length === 0) {
+      setMessage('Chưa có dữ liệu để xuất báo cáo xuất kho.', true);
+      return;
+    }
+
+    const rows = [
+      csvLine(['Mã sản phẩm', 'Tên sản phẩm', 'Đơn vị', 'Tổng nhập', 'Tồn hiện tại', 'Ước tính đã xuất']),
+      ...stockOutReportRows.map((row) =>
+        csvLine([row.product_code, row.product_name, row.unit, row.importedQty, row.currentQty, row.exportedQty])
+      ),
+    ];
+
+    const fileName = `bao-cao-xuat-kho-${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadFile(rows.join('\n'), fileName, 'text/csv;charset=utf-8;');
+    setMessage('Đã xuất báo cáo xuất kho (CSV).');
+  };
+
+  const resolveCategoryIdFromCsv = (row, headerMap) => {
+    const categoryIdRaw =
+      row[headerMap.category_id] ??
+      row[headerMap.danh_muc_id] ??
+      row[headerMap.category] ??
+      '';
+
+    const numericCategoryId = Number(categoryIdRaw || 0);
+    if (numericCategoryId && categoriesMap[numericCategoryId]) {
+      return numericCategoryId;
+    }
+
+    const categoryNameRaw = row[headerMap.category_name] ?? row[headerMap.danh_muc] ?? '';
+    const categoryName = String(categoryNameRaw || '').trim().toLowerCase();
+    if (!categoryName) return '';
+
+    const found = categories.find((item) => String(item.category_name || '').trim().toLowerCase() === categoryName);
+    return found ? found.category_id : '';
+  };
+
+  const handleCsvImportProducts = async () => {
+    if (!csvImportFile) {
+      setMessage('Vui lòng chọn file CSV trước khi import.', true);
+      return;
+    }
+
+    try {
+      setIsWorking(true);
+
+      const text = await csvImportFile.text();
+      const lines = text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length < 2) {
+        throw new Error('File CSV không có dữ liệu sản phẩm.');
+      }
+
+      const headers = parseCsvLine(lines[0]).map(normalizeHeader);
+      const headerMap = Object.fromEntries(headers.map((header, index) => [header, index]));
+
+      if (headerMap.product_code === undefined || headerMap.product_name === undefined) {
+        throw new Error('CSV cần tối thiểu cột product_code và product_name.');
+      }
+
+      let success = 0;
+      let failed = 0;
+      const failures = [];
+
+      for (let i = 1; i < lines.length; i += 1) {
+        const cols = parseCsvLine(lines[i]);
+        const get = (key) => {
+          const idx = headerMap[key];
+          if (idx === undefined) return '';
+          return cols[idx] ?? '';
+        };
+
+        const productCode = String(get('product_code')).trim();
+        const productName = String(get('product_name')).trim();
+
+        if (!productCode || !productName) {
+          failed += 1;
+          failures.push(`Dòng ${i + 1}: thiếu product_code hoặc product_name`);
+          continue;
+        }
+
+        const form = new FormData();
+        form.append('product_code', productCode);
+        form.append('product_name', productName);
+        form.append('category_id', resolveCategoryIdFromCsv(cols, headerMap));
+        form.append('unit', String(get('unit') || get('don_vi') || ''));
+        form.append('purchase_price', String(get('purchase_price') || get('gia_nhap') || 0));
+        form.append('selling_price', String(get('selling_price') || get('gia_ban') || 0));
+        form.append('quantity', String(get('quantity') || get('so_luong') || 0));
+        form.append('expiry_date', String(get('expiry_date') || get('han_dung') || ''));
+        form.append('description', String(get('description') || get('mo_ta') || ''));
+        form.append('image', String(get('image') || get('hinh_anh') || ''));
+
+        try {
+          const response = await fetch(`${BACKEND_URL}/api/product`, {
+            method: 'POST',
+            credentials: 'include',
+            body: form,
+          });
+
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.message || `HTTP ${response.status}`);
+          }
+
+          success += 1;
+        } catch (error) {
+          failed += 1;
+          failures.push(`Dòng ${i + 1} (${productCode}): ${error.message}`);
+        }
+      }
+
+      await loadProducts();
+      await loadImportHistory();
+
+      if (failed > 0) {
+        setMessage(`Import CSV hoàn tất: thành công ${success}, lỗi ${failed}. ${failures.slice(0, 2).join(' | ')}`, true);
+      } else {
+        setMessage(`Import CSV thành công ${success} sản phẩm.`);
+      }
+    } catch (error) {
+      setMessage(`Import CSV thất bại: ${error.message}`, true);
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
   const menuItems = [
     { key: 'dashboard', label: 'Bảng điều khiển', active: activeTab === 'dashboard', onClick: () => setActiveTab('dashboard') },
     { key: 'products', label: 'Quản lý hàng hóa', active: activeTab === 'products', onClick: () => setActiveTab('products') },
+    { key: 'stockout-report', label: 'Báo cáo xuất kho', active: activeTab === 'stockout-report', onClick: () => setActiveTab('stockout-report') },
   ];
 
   return (
@@ -278,6 +497,9 @@ const StaffWorkspace = () => {
           </button>
           <button type="button" className={`tab ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
             Hàng hóa
+          </button>
+          <button type="button" className={`tab ${activeTab === 'stockout-report' ? 'active' : ''}`} onClick={() => setActiveTab('stockout-report')}>
+            Báo cáo xuất kho
           </button>
         </div>
 
@@ -408,6 +630,24 @@ const StaffWorkspace = () => {
               Staff được thêm/sửa/xóa sản phẩm. Danh mục chỉ để chọn, không có chức năng sửa/xóa danh mục.
             </p>
 
+            <div className="card" style={{ marginBottom: 14 }}>
+              <h3>Import danh sách sản phẩm từ CSV</h3>
+              <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>
+                Cột bắt buộc: product_code, product_name. Cột hỗ trợ: category_id/category_name, unit, purchase_price,
+                selling_price, quantity, expiry_date, image, description.
+              </p>
+              <div className="btn-row">
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(event) => setCsvImportFile(event.target.files?.[0] || null)}
+                />
+                <button type="button" className="btn btn-primary" onClick={handleCsvImportProducts} disabled={isWorking}>
+                  Import CSV
+                </button>
+              </div>
+            </div>
+
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
@@ -450,6 +690,57 @@ const StaffWorkspace = () => {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'stockout-report' && (
+          <section className="card">
+            <section className="hero" style={{ marginBottom: 12 }}>
+              <div>
+                <h3>Báo cáo xuất kho (ước tính)</h3>
+                <p>
+                  Dựa trên công thức: tổng nhập từ history_import trừ tồn hiện tại trong product.
+                </p>
+              </div>
+              <div className="btn-row">
+                <button type="button" className="btn btn-primary" onClick={handleExportStockOutReport}>
+                  Xuất báo cáo CSV
+                </button>
+              </div>
+            </section>
+
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã</th>
+                    <th>Tên sản phẩm</th>
+                    <th>Đơn vị</th>
+                    <th>Tổng nhập</th>
+                    <th>Tồn hiện tại</th>
+                    <th>Ước tính đã xuất</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stockOutReportRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={6}>Chưa có dữ liệu xuất kho để hiển thị.</td>
+                    </tr>
+                  ) : (
+                    stockOutReportRows.map((row) => (
+                      <tr key={`stockout-${row.product_id}`}>
+                        <td>{row.product_code || '-'}</td>
+                        <td>{row.product_name}</td>
+                        <td>{row.unit || '-'}</td>
+                        <td>{row.importedQty}</td>
+                        <td>{row.currentQty}</td>
+                        <td>{row.exportedQty}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
