@@ -1,31 +1,16 @@
-product_code,product_name,category_id,unit,purchase_price,selling_price,quantity,expiry_date,image,description
-STFF0001,Paracetamol 500mg Extra,2,Hộp,18000,24000,120,2027-12-31,,Thuốc giảm đau hạ sốt dùng phổ biến
-STFF0002,Vitamin C 1000mg Sủi,3,Tuýp,32000,45000,90,2027-09-30,,Hỗ trợ tăng đề kháng và giảm mệt mỏi
-STFF0003,Khẩu trang y tế 4 lớp,4,Hộp,25000,36000,200,2030-12-31,,Vật tư bảo hộ dùng hằng ngày
-STFF0004,Omega 3 Fish Oil 1000mg,3,Hộp,140000,189000,70,2028-08-31,,Thực phẩm bổ sung hỗ trợ tim mạch
-STFF0005,Xịt mũi nước biển ưu trương,4,Chai,28000,39000,150,2028-03-31,,Hỗ trợ vệ sinh mũi họng
-STFF0006,Canxi Nano D3 K2,3,Hộp,165000,225000,60,2028-11-30,,Bổ sung canxi cho xương chắc khỏe
-STFF0007,Men vi sinh Lactobacillus,3,Hộp,98000,138000,75,2027-10-31,,Hỗ trợ cân bằng hệ vi sinh đường ruột
-STFF0008,Nhiệt kế điện tử đầu mềm,4,Hộp,52000,74000,45,2031-12-31,,Thiết bị đo nhiệt độ nhanh và chính xác
-STFF0009,Băng cá nhân kháng khuẩn,4,Hộp,15000,23000,180,2030-06-30,,Vật tư y tế sơ cứu cơ bản
-STFF0010,Thuốc nhỏ mắt Natri Clorid,1,Chai,12000,19000,130,2027-06-30,,Hỗ trợ làm sạch và dưỡng ẩm mắt
-STFF0011,Siro ho thảo dược người lớn,1,Chai,42000,62000,80,2027-11-30,,Giảm ho dịu họng từ thảo dược
-STFF0012,Siro ho thảo dược trẻ em,1,Chai,39000,58000,85,2027-11-30,,Giảm ho dịu cổ họng cho trẻ nhỏ
-STFF0013,Viên uống bổ gan Milk Thistle,3,Hộp,175000,239000,50,2028-12-31,,Hỗ trợ chức năng gan và giải độc
-STFF0014,Kem chống nắng SPF50+,3,Tuýp,210000,299000,55,2028-09-30,,Bảo vệ da trước tia UV hằng ngày
-STFF0015,Sữa rửa mặt dịu nhẹ,3,Chai,95000,139000,95,2028-07-31,,Làm sạch da nhẹ nhàng không khô căng
-STFF0016,Máy đo huyết áp bắp tay,4,Hộp,760000,980000,22,2032-12-31,,Thiết bị theo dõi huyết áp tại nhà
-STFF0017,Que thử đường huyết 50 que,4,Hộp,185000,249000,68,2031-12-31,,Vật tư đi kèm máy đo đường huyết
-STFF0018,Viên sắt và acid folic,3,Hộp,69000,99000,110,2028-02-29,,Bổ sung vi chất cho phụ nữ mang thai
-STFF0019,Viên uống kẽm 15mg,3,Hộp,58000,85000,120,2028-04-30,,Hỗ trợ miễn dịch và sức khỏe da tóc
-STFF0020,Thuốc giảm đau cơ xương khớp,1,Hộp,87000,119000,65,2027-10-31,,Hỗ trợ giảm đau nhức cơ xương khớp
-STFF0021,Dung dịch sát khuẩn tay nhanh,4,Chai,27000,39000,170,2029-12-31,,Sát khuẩn tay tiện lợi khi di chuyển
-STFF0022,Viên ngậm ho bạc hà,1,Hộp,22000,33000,160,2027-08-31,,Làm dịu cổ họng giảm cảm giác rát
-STFF0023,Thuốc nhỏ mũi trẻ em,1,Chai,18000,26000,140,2027-07-31,,Giảm nghẹt mũi và thông thoáng đường thở
-STFF0024,Collagen peptide dạng bột,3,Hộp,265000,349000,48,2028-10-31,,Hỗ trợ làn da săn chắc và đàn hồi
-STFF0025,Viên uống hỗ trợ giấc ngủ,3,Hộp,125000,175000,72,2028-05-31,,Giúp thư giãn và ngủ ngon hơn
-STFF0026,Gel rửa tay khô hương trà xanh,4,Chai,23000,34000,190,2029-11-30,,Làm sạch tay nhanh không cần nước
-STFF0027,Khăn ướt kháng khuẩn,4,Hộp,31000,46000,155,2029-10-31,,Tiện lợi vệ sinh bề mặt và tay
-STFF0028,Thuốc dạ dày dạng gói,1,Hộp,66000,92000,88,2027-12-31,,Hỗ trợ giảm triệu chứng đau dạ dày
-STFF0029,Viên uống bổ não Ginkgo,3,Hộp,158000,219000,57,2028-06-30,,Hỗ trợ tuần hoàn não và trí nhớ
-STFF0030,Nước muối sinh lý 500ml,4,Chai,14000,22000,210,2028-01-31,,Dùng rửa mũi họng và vệ sinh cá nhân
+﻿product_code,product_name,category_id,unit,purchase_price,selling_price,quantity,expiry_date,image,description
+IMP26001,Paracetamol Plus 650mg,2,Hộp,22000,32000,120,2027-12-31,,Nhóm test nhập sản phẩm A
+IMP26002,Vitamin C 1000mg sủi,3,Tuýp,35000,49000,90,2027-09-30,,Nhóm test nhập sản phẩm A
+IMP26003,Khẩu trang y tế 4 lớp,4,Hộp,26000,38000,200,2030-12-31,,Nhóm test nhập sản phẩm A
+IMP26004,Omega 3 Fish Oil 1000mg,3,Hộp,145000,199000,70,2028-08-31,,Nhóm test nhập sản phẩm A
+IMP26005,Xịt mũi nước biển ưu trương,4,Chai,28000,39000,150,2028-03-31,,Nhóm test nhập sản phẩm A
+IMP26006,Canxi Nano D3 K2,3,Hộp,165000,225000,60,2028-11-30,,Nhóm test nhập sản phẩm A
+IMP26007,Men vi sinh Lactobacillus,8,Hộp,98000,138000,75,2027-10-31,,Nhóm test nhập sản phẩm A
+IMP26008,Nhiệt kế điện tử đầu mềm,11,Hộp,52000,74000,45,2031-12-31,,Nhóm test nhập sản phẩm A
+IMP26009,Băng cá nhân kháng khuẩn,4,Hộp,15000,23000,180,2030-06-30,,Nhóm test nhập sản phẩm A
+IMP26010,Thuốc nhỏ mắt Natri Clorid,1,Chai,12000,19000,130,2027-06-30,,Nhóm test nhập sản phẩm A
+IMP26011,Siro ho thảo dược người lớn,7,Chai,42000,62000,80,2027-11-30,,Nhóm test nhập sản phẩm A
+IMP26012,Siro ho thảo dược trẻ em,10,Chai,39000,58000,85,2027-11-30,,Nhóm test nhập sản phẩm A
+IMP26013,Viên uống bổ gan Milk Thistle,3,Hộp,175000,239000,50,2028-12-31,,Nhóm test nhập sản phẩm A
+IMP26014,Kem chống nắng SPF50+,12,Tuýp,210000,299000,55,2028-09-30,,Nhóm test nhập sản phẩm A
+IMP26015,Sữa rửa mặt dịu nhẹ,12,Chai,95000,139000,95,2028-07-31,,Nhóm test nhập sản phẩm A

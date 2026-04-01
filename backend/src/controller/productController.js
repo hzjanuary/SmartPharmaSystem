@@ -83,7 +83,10 @@ const productController = {
             if (error.code === 'ER_DUP_ENTRY') {
                 return res.status(400).json({ message: "Mã sản phẩm đã tồn tại!" });
             }
-            res.status(500).json({ error: error.message });
+            if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+                return res.status(400).json({ message: "Danh mục sản phẩm không hợp lệ!" });
+            }
+            res.status(500).json({ message: "Tạo sản phẩm thất bại!", error: error.message });
         }
     },
 

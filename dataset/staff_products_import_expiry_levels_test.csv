@@ -1,0 +1,9 @@
+﻿product_code,product_name,category_id,unit,purchase_price,selling_price,quantity,expiry_date,image,description
+EXPY001,Sản phẩm test đã hết hạn A,2,Hộp,18000,26000,40,2026-03-15,,AI test mức độ hạn dùng - dự kiến HẾT HẠN
+EXPY002,Sản phẩm test đã hết hạn B,1,Hộp,22000,32000,35,2026-03-28,,AI test mức độ hạn dùng - dự kiến HẾT HẠN
+EXPY003,Sản phẩm test cận hạn cao A,3,Chai,45000,62000,55,2026-04-02,,AI test mức độ hạn dùng - dự kiến CAO
+EXPY004,Sản phẩm test cận hạn cao B,4,Hộp,28000,41000,60,2026-04-06,,AI test mức độ hạn dùng - dự kiến CAO
+EXPY005,Sản phẩm test cận hạn trung bình A,7,Hộp,39000,56000,70,2026-04-18,,AI test mức độ hạn dùng - dự kiến TRUNG BÌNH
+EXPY006,Sản phẩm test cận hạn trung bình B,8,Hộp,51000,74000,75,2026-05-05,,AI test mức độ hạn dùng - dự kiến TRUNG BÌNH
+EXPY007,Sản phẩm test mức an toàn A,10,Chai,67000,93000,80,2026-07-20,,AI test mức độ hạn dùng - dự kiến THẤP
+EXPY008,Sản phẩm test mức an toàn B,12,Tuýp,99000,139000,90,2026-12-31,,AI test mức độ hạn dùng - dự kiến THẤP

@@ -180,7 +180,13 @@ INSERT INTO `product_category` (`category_id`, `category_name`, `description`) V
 (3, 'Thực phẩm chức năng', 'Vitamin và các loại thực phẩm bổ sung sức khỏe'),
 (4, 'Dụng cụ y tế', 'Khẩu trang, bông băng, máy đo huyết áp'),
 (5, 'Thuốc giảm đau', 'Các loại thuốc giảm đau'),
-(6, 'Thuốc chóng say xe', 'Nhóm thuốc chóng say xe');
+(6, 'Thuốc chóng say xe', 'Nhóm thuốc chóng say xe'),
+(7, 'Thuốc cảm cúm', 'Nhóm thuốc hỗ trợ giảm triệu chứng cảm lạnh và cảm cúm'),
+(8, 'Thuốc tiêu hóa', 'Nhóm thuốc và sản phẩm hỗ trợ hệ tiêu hóa, dạ dày, đường ruột'),
+(9, 'Thuốc dị ứng', 'Nhóm thuốc hỗ trợ giảm triệu chứng dị ứng theo mùa và dị ứng da'),
+(10, 'Chăm sóc mẹ và bé', 'Sản phẩm bổ sung và chăm sóc sức khỏe cho mẹ bầu, mẹ sau sinh và trẻ nhỏ'),
+(11, 'Thiết bị xét nghiệm nhanh', 'Bộ kit và vật tư hỗ trợ xét nghiệm nhanh tại nhà hoặc cơ sở y tế'),
+(12, 'Dược mỹ phẩm', 'Sản phẩm chăm sóc da, tóc và cơ thể theo định hướng dược mỹ phẩm');
 
 -- --------------------------------------------------------
 
@@ -346,7 +352,7 @@ ALTER TABLE `product`
 -- AUTO_INCREMENT cho bảng `product_category`
 --
 ALTER TABLE `product_category`
-  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT cho bảng `product_image`

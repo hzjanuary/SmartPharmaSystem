@@ -62,6 +62,7 @@ const AdminWorkspace = () => {
 
   const [summary, setSummary] = useState(emptySummary);
   const [products, setProducts] = useState([]);
+  const [importHistory, setImportHistory] = useState([]);
 
   const [status, setStatus] = useState({ text: '', isError: false });
   const [backupFile, setBackupFile] = useState(null);
@@ -74,6 +75,53 @@ const AdminWorkspace = () => {
     const staffCount = users.filter((item) => fromBackendRole(item.role) === 'staff').length;
     return { adminCount, staffCount };
   }, [users]);
+
+  const stockOutReportRows = useMemo(() => {
+    const importedByProductId = {};
+
+    importHistory.forEach((row) => {
+      const pid = Number(row.product_id || 0);
+      if (!pid) return;
+      importedByProductId[pid] = (importedByProductId[pid] || 0) + Number(row.quantity || 0);
+    });
+
+    return products
+      .map((item) => {
+        const importedQty = importedByProductId[item.product_id] || 0;
+        const currentQty = Number(item.quantity || 0);
+        const exportedQty = Math.max(importedQty - currentQty, 0);
+        return {
+          product_id: item.product_id,
+          product_code: item.product_code || '-',
+          product_name: item.product_name || '-',
+          unit: item.unit || '-',
+          importedQty,
+          currentQty,
+          exportedQty,
+        };
+      })
+      .filter((row) => row.importedQty > 0 || row.exportedQty > 0)
+      .sort((a, b) => b.exportedQty - a.exportedQty);
+  }, [importHistory, products]);
+
+  const totalEstimatedExported = useMemo(
+    () => stockOutReportRows.reduce((sum, row) => sum + Number(row.exportedQty || 0), 0),
+    [stockOutReportRows]
+  );
+
+  const lowStockRows = useMemo(() => {
+    const LOW_STOCK_THRESHOLD = 10;
+    return products
+      .map((item) => ({
+        product_id: item.product_id,
+        product_code: item.product_code || '-',
+        product_name: item.product_name || '-',
+        unit: item.unit || '-',
+        quantity: Number(item.quantity || 0),
+      }))
+      .filter((item) => item.quantity <= LOW_STOCK_THRESHOLD)
+      .sort((a, b) => a.quantity - b.quantity);
+  }, [products]);
 
   const showStatus = (text, isError = false) => {
     setStatus({ text, isError });
@@ -115,11 +163,21 @@ const AdminWorkspace = () => {
     }
   }, []);
 
+  const loadImportHistory = useCallback(async () => {
+    try {
+      const payload = await requestJson(`${BACKEND_URL}/api/history_import`);
+      setImportHistory(Array.isArray(payload) ? payload : []);
+    } catch (error) {
+      setImportHistory([]);
+      showStatus(`Không thể tải lịch sử nhập kho: ${error.message}`, true);
+    }
+  }, []);
+
   const loadAll = useCallback(async () => {
     setIsWorking(true);
-    await Promise.all([loadUsers(), loadCategories(), loadSummary(), loadProducts()]);
+    await Promise.all([loadUsers(), loadCategories(), loadSummary(), loadProducts(), loadImportHistory()]);
     setIsWorking(false);
-  }, [loadCategories, loadProducts, loadSummary, loadUsers]);
+  }, [loadCategories, loadImportHistory, loadProducts, loadSummary, loadUsers]);
 
   useEffect(() => {
     loadAll();
@@ -243,9 +301,15 @@ const AdminWorkspace = () => {
       csvLine(['Sản phẩm sắp hết hạn', summary.stats.expiring_products]),
       csvLine(['Đơn hàng mới', summary.stats.new_orders]),
       csvLine(['Nhập kho tháng', summary.stats.monthly_import]),
+      csvLine(['Tổng ước tính đã xuất kho', totalEstimatedExported]),
       '',
       csvLine(['Ngày', 'Số lượng']),
       ...(summary.chart.labels || []).map((label, index) => csvLine([label, summary.chart.values?.[index] || 0])),
+      '',
+      csvLine(['Canh bao ton kho thap', 'So luong', 'Muc do']),
+      ...lowStockRows.map((item) =>
+        csvLine([`${item.product_code} - ${item.product_name}`, item.quantity, item.quantity === 0 ? 'HET_HANG' : 'SAP_HET'])
+      ),
       '',
       csvLine(['Cảnh báo', 'Hạn dùng', 'Mức độ']),
       ...(summary.expiry_alerts || []).map((item) =>
@@ -658,6 +722,10 @@ const AdminWorkspace = () => {
                 <h4>Nhập kho tháng</h4>
                 <p>{Number(summary.stats.monthly_import || 0).toLocaleString('vi-VN')}</p>
               </article>
+              <article className="kpi">
+                <h4>Tổng ước tính đã xuất kho</h4>
+                <p>{totalEstimatedExported.toLocaleString('vi-VN')}</p>
+              </article>
             </div>
 
             <section className="card">
@@ -708,6 +776,41 @@ const AdminWorkspace = () => {
                               }`}
                             >
                               {item.risk_level || 'LOW'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="table-wrap" style={{ marginTop: 14 }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mã</th>
+                      <th>Tên sản phẩm</th>
+                      <th>Đơn vị</th>
+                      <th>Tồn hiện tại</th>
+                      <th>Cảnh báo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lowStockRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>Không có sản phẩm tồn thấp.</td>
+                      </tr>
+                    ) : (
+                      lowStockRows.map((item) => (
+                        <tr key={`admin-low-${item.product_id}`}>
+                          <td>{item.product_code}</td>
+                          <td>{item.product_name}</td>
+                          <td>{item.unit}</td>
+                          <td>{item.quantity}</td>
+                          <td>
+                            <span className={`badge ${item.quantity === 0 ? 'badge-danger' : 'badge-warning'}`}>
+                              {item.quantity === 0 ? 'Het hang' : 'Sap het hang'}
                             </span>
                           </td>
                         </tr>

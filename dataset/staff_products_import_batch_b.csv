@@ -1,0 +1,11 @@
+﻿product_code,product_name,category_id,unit,purchase_price,selling_price,quantity,expiry_date,image,description
+DEMOB001,Ibuprofen 400mg,5,Hộp,27000,39000,120,2027-10-31,,Dữ liệu demo nhập kho đợt B
+DEMOB002,Dung dịch bù điện giải,8,Hộp,34000,52000,150,2028-02-28,,Dữ liệu demo nhập kho đợt B
+DEMOB003,Xịt sát khuẩn 100ml,4,Chai,36000,54000,98,2028-09-30,,Dữ liệu demo nhập kho đợt B
+DEMOB004,Kẹo dẻo tăng đề kháng,3,Chai,89000,128000,84,2028-11-30,,Dữ liệu demo nhập kho đợt B
+DEMOB005,Thuốc chống say xe,6,Hộp,31000,47000,90,2027-08-31,,Dữ liệu demo nhập kho đợt B
+DEMOB006,Xịt thông mũi cho trẻ,7,Chai,29000,45000,112,2027-12-31,,Dữ liệu demo nhập kho đợt B
+DEMOB007,Viên DHA cho mẹ bầu,10,Hộp,155000,219000,58,2028-06-30,,Dữ liệu demo nhập kho đợt B
+DEMOB008,Que thử đường huyết 25 que,11,Hộp,135000,189000,64,2030-12-31,,Dữ liệu demo nhập kho đợt B
+DEMOB009,Gel dưỡng ẩm da nhạy cảm,12,Tuýp,172000,245000,52,2028-08-31,,Dữ liệu demo nhập kho đợt B
+DEMOB010,Amoxicillin 500mg,1,Hộp,42000,62000,105,2027-07-31,,Dữ liệu demo nhập kho đợt B

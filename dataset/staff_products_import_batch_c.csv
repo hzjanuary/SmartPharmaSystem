@@ -1,0 +1,11 @@
+﻿product_code,product_name,category_id,unit,purchase_price,selling_price,quantity,expiry_date,image,description
+DEMOC001,Azithromycin 500mg,1,Hộp,51000,76000,92,2027-11-30,,Dữ liệu demo nhập kho đợt C
+DEMOC002,Miếng dán giảm đau 8 giờ,5,Hộp,39000,59000,120,2028-03-31,,Dữ liệu demo nhập kho đợt C
+DEMOC003,Bột men vi sinh chất xơ,8,Hộp,83000,119000,78,2028-12-31,,Dữ liệu demo nhập kho đợt C
+DEMOC004,Siro hạ sốt trẻ em 60ml,7,Chai,33000,52000,108,2027-10-31,,Dữ liệu demo nhập kho đợt C
+DEMOC005,Thuốc nhỏ mũi nước muối cho bé,10,Chai,26000,41000,140,2028-02-29,,Dữ liệu demo nhập kho đợt C
+DEMOC006,Que test nhanh cúm A/B,11,Hộp,39000,62000,170,2028-09-30,,Dữ liệu demo nhập kho đợt C
+DEMOC007,Kem phục hồi hàng rào da,12,Tuýp,198000,279000,60,2029-01-31,,Dữ liệu demo nhập kho đợt C
+DEMOC008,Dung dịch sát khuẩn tay 500ml,4,Chai,43000,65000,210,2029-07-31,,Dữ liệu demo nhập kho đợt C
+DEMOC009,Vitamin nhóm B tổng hợp,3,Hộp,47000,71000,96,2028-05-31,,Dữ liệu demo nhập kho đợt C
+DEMOC010,Viên chống say tàu xe,6,Hộp,28000,44000,102,2027-09-30,,Dữ liệu demo nhập kho đợt C

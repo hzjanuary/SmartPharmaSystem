@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import SalesChart from '../components/SalesChart';
 import Sidebar from '../components/Sidebar';
 import { AI_URL, BACKEND_URL, requestJson } from '../utils/api';
@@ -33,6 +34,33 @@ const normalizeExpiry = (value) => {
   return date.toISOString().slice(0, 10);
 };
 
+const normalizeImportDate = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  // Already in ISO-like format.
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) {
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+  }
+
+  // Common US-style format from spreadsheet parsing: M/D/YY or M/D/YYYY.
+  const mdYMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (mdYMatch) {
+    const month = Number(mdYMatch[1]);
+    const day = Number(mdYMatch[2]);
+    const yearRaw = Number(mdYMatch[3]);
+    const year = mdYMatch[3].length === 2 ? 2000 + yearRaw : yearRaw;
+    const date = new Date(year, month - 1, day);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toISOString().slice(0, 10);
+  }
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+};
+
 const formatDate = (value) => {
   if (!value) return '-';
   const date = new Date(value);
@@ -52,39 +80,21 @@ const downloadFile = (content, fileName, type) => {
 
 const csvLine = (values) => values.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',');
 
-const parseCsvLine = (line) => {
-  const result = [];
-  let current = '';
-  let insideQuotes = false;
-
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    const next = line[i + 1];
-
-    if (ch === '"') {
-      if (insideQuotes && next === '"') {
-        current += '"';
-        i += 1;
-      } else {
-        insideQuotes = !insideQuotes;
-      }
-    } else if (ch === ',' && !insideQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += ch;
-    }
-  }
-
-  result.push(current.trim());
-  return result;
-};
-
 const normalizeHeader = (header) =>
   String(header || '')
     .trim()
     .toLowerCase()
     .replace(/\s+/g, '_');
+
+const parseSpreadsheetFile = async (file) => {
+  const data = await file.arrayBuffer();
+  const workbook = XLSX.read(data, { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) return [];
+
+  const sheet = workbook.Sheets[firstSheetName];
+  return XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+};
 
 const StaffWorkspace = () => {
   const navigate = useNavigate();
@@ -96,7 +106,8 @@ const StaffWorkspace = () => {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [importHistory, setImportHistory] = useState([]);
-  const [csvImportFile, setCsvImportFile] = useState(null);
+  const [productImportFile, setProductImportFile] = useState(null);
+  const [stockOutImportFile, setStockOutImportFile] = useState(null);
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -156,9 +167,34 @@ const StaffWorkspace = () => {
       .sort((a, b) => b.exportedQty - a.exportedQty);
   }, [importHistory, products]);
 
+  const totalEstimatedExported = useMemo(
+    () => stockOutReportRows.reduce((sum, row) => sum + Number(row.exportedQty || 0), 0),
+    [stockOutReportRows]
+  );
+
+  const lowStockRows = useMemo(() => {
+    const LOW_STOCK_THRESHOLD = 10;
+    return products
+      .map((item) => ({
+        product_id: item.product_id,
+        product_code: item.product_code || '-',
+        product_name: item.product_name || '-',
+        unit: item.unit || '-',
+        quantity: Number(item.quantity || 0),
+      }))
+      .filter((item) => item.quantity <= LOW_STOCK_THRESHOLD)
+      .sort((a, b) => a.quantity - b.quantity);
+  }, [products]);
+
   const setMessage = (text, isError = false) => {
     setStatus({ text, isError });
   };
+
+  useEffect(() => {
+    if (!status.text) return;
+    const timer = setTimeout(() => setStatus({ text: '', isError: false }), 3200);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -326,6 +362,65 @@ const StaffWorkspace = () => {
     }
   };
 
+  const handleStockOutProduct = async (product) => {
+    const currentQty = Number(product.quantity || 0);
+    const rawQty = window.prompt(
+      `Nhập số lượng xuất kho cho "${product.product_name}" (tồn hiện tại: ${currentQty})`,
+      '1'
+    );
+
+    if (rawQty === null) return;
+
+    const exportQty = Number(rawQty);
+    if (!Number.isInteger(exportQty) || exportQty <= 0) {
+      setMessage('Số lượng xuất kho phải là số nguyên dương.', true);
+      return;
+    }
+
+    if (exportQty > currentQty) {
+      setMessage('Số lượng xuất kho không được lớn hơn tồn hiện tại.', true);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Xác nhận xuất kho ${exportQty} ${product.unit || ''} cho sản phẩm "${product.product_name}"?`
+    );
+    if (!confirmed) return;
+
+    const payload = new FormData();
+    payload.append('product_code', product.product_code || '');
+    payload.append('product_name', product.product_name || '');
+    payload.append('category_id', product.category_id || '');
+    payload.append('unit', product.unit || '');
+    payload.append('purchase_price', product.purchase_price || 0);
+    payload.append('selling_price', product.selling_price || 0);
+    payload.append('quantity', Math.max(currentQty - exportQty, 0));
+    payload.append('expiry_date', product.expiry_date || '');
+    payload.append('description', product.description || '');
+    payload.append('image', product.image || '');
+
+    try {
+      setIsWorking(true);
+      const response = await fetch(`${BACKEND_URL}/api/product/${product.product_id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        body: payload,
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+
+      setMessage(`Xuất kho thành công: -${exportQty} ${product.unit || ''} (${product.product_name}).`);
+      await Promise.all([loadProducts(), loadSummary(), loadFefo()]);
+    } catch (error) {
+      setMessage(`Không thể xuất kho: ${error.message}`, true);
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
   const handleExportStockOutReport = () => {
     if (stockOutReportRows.length === 0) {
       setMessage('Chưa có dữ liệu để xuất báo cáo xuất kho.', true);
@@ -344,6 +439,21 @@ const StaffWorkspace = () => {
     setMessage('Đã xuất báo cáo xuất kho (CSV).');
   };
 
+  const buildProductUpdatePayload = (product, nextQty) => {
+    const payload = new FormData();
+    payload.append('product_code', product.product_code || '');
+    payload.append('product_name', product.product_name || '');
+    payload.append('category_id', product.category_id || '');
+    payload.append('unit', product.unit || '');
+    payload.append('purchase_price', product.purchase_price || 0);
+    payload.append('selling_price', product.selling_price || 0);
+    payload.append('quantity', nextQty);
+    payload.append('expiry_date', product.expiry_date || '');
+    payload.append('description', product.description || '');
+    payload.append('image', product.image || '');
+    return payload;
+  };
+
   const resolveCategoryIdFromCsv = (row, headerMap) => {
     const categoryIdRaw =
       row[headerMap.category_id] ??
@@ -351,8 +461,9 @@ const StaffWorkspace = () => {
       row[headerMap.category] ??
       '';
 
-    const numericCategoryId = Number(categoryIdRaw || 0);
-    if (numericCategoryId && categoriesMap[numericCategoryId]) {
+    const numericCategoryId = Number(String(categoryIdRaw || '').trim());
+    // Do not depend on async category list loading; backend will enforce FK validity.
+    if (Number.isInteger(numericCategoryId) && numericCategoryId > 0) {
       return numericCategoryId;
     }
 
@@ -364,27 +475,29 @@ const StaffWorkspace = () => {
     return found ? found.category_id : '';
   };
 
-  const handleCsvImportProducts = async () => {
-    if (!csvImportFile) {
-      setMessage('Vui lòng chọn file CSV trước khi import.', true);
+  const handleImportProductsFromFile = async () => {
+    if (!productImportFile) {
+      setMessage('Vui lòng chọn file Excel/CSV trước khi import sản phẩm.', true);
       return;
     }
 
     try {
       setIsWorking(true);
 
-      const text = await csvImportFile.text();
-      const lines = text
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-      if (lines.length < 2) {
-        throw new Error('File CSV không có dữ liệu sản phẩm.');
+      const rawRows = await parseSpreadsheetFile(productImportFile);
+      if (!rawRows.length) {
+        throw new Error('File import không có dữ liệu sản phẩm.');
       }
 
-      const headers = parseCsvLine(lines[0]).map(normalizeHeader);
-      const headerMap = Object.fromEntries(headers.map((header, index) => [header, index]));
+      const rows = rawRows.map((row) => {
+        const normalized = {};
+        Object.entries(row).forEach(([key, value]) => {
+          normalized[normalizeHeader(key)] = value;
+        });
+        return normalized;
+      });
+
+      const headerMap = Object.keys(rows[0] || {}).reduce((acc, key) => ({ ...acc, [key]: key }), {});
 
       if (headerMap.product_code === undefined || headerMap.product_name === undefined) {
         throw new Error('CSV cần tối thiểu cột product_code và product_name.');
@@ -394,32 +507,36 @@ const StaffWorkspace = () => {
       let failed = 0;
       const failures = [];
 
-      for (let i = 1; i < lines.length; i += 1) {
-        const cols = parseCsvLine(lines[i]);
-        const get = (key) => {
-          const idx = headerMap[key];
-          if (idx === undefined) return '';
-          return cols[idx] ?? '';
-        };
+      for (let i = 0; i < rows.length; i += 1) {
+        const row = rows[i];
+        const get = (key) => row[headerMap[key]] ?? '';
 
         const productCode = String(get('product_code')).trim();
         const productName = String(get('product_name')).trim();
 
         if (!productCode || !productName) {
           failed += 1;
-          failures.push(`Dòng ${i + 1}: thiếu product_code hoặc product_name`);
+          failures.push(`Dòng ${i + 2}: thiếu product_code hoặc product_name`);
+          continue;
+        }
+
+        const categoryId = resolveCategoryIdFromCsv(row, headerMap);
+        if (!categoryId) {
+          failed += 1;
+          failures.push(`Dòng ${i + 2} (${productCode}): category_id/category_name không hợp lệ`);
           continue;
         }
 
         const form = new FormData();
         form.append('product_code', productCode);
         form.append('product_name', productName);
-        form.append('category_id', resolveCategoryIdFromCsv(cols, headerMap));
+        form.append('category_id', String(categoryId));
         form.append('unit', String(get('unit') || get('don_vi') || ''));
         form.append('purchase_price', String(get('purchase_price') || get('gia_nhap') || 0));
         form.append('selling_price', String(get('selling_price') || get('gia_ban') || 0));
         form.append('quantity', String(get('quantity') || get('so_luong') || 0));
-        form.append('expiry_date', String(get('expiry_date') || get('han_dung') || ''));
+        const expiryDate = normalizeImportDate(get('expiry_date') || get('han_dung') || '');
+        form.append('expiry_date', expiryDate);
         form.append('description', String(get('description') || get('mo_ta') || ''));
         form.append('image', String(get('image') || get('hinh_anh') || ''));
 
@@ -432,13 +549,14 @@ const StaffWorkspace = () => {
 
           const payload = await response.json().catch(() => ({}));
           if (!response.ok) {
-            throw new Error(payload.message || `HTTP ${response.status}`);
+            const detail = payload.error && payload.error !== payload.message ? ` (${payload.error})` : '';
+            throw new Error(`${payload.message || payload.error || `HTTP ${response.status}`}${detail}`);
           }
 
           success += 1;
         } catch (error) {
           failed += 1;
-          failures.push(`Dòng ${i + 1} (${productCode}): ${error.message}`);
+          failures.push(`Dòng ${i + 2} (${productCode}): ${error.message}`);
         }
       }
 
@@ -446,12 +564,111 @@ const StaffWorkspace = () => {
       await loadImportHistory();
 
       if (failed > 0) {
-        setMessage(`Import CSV hoàn tất: thành công ${success}, lỗi ${failed}. ${failures.slice(0, 2).join(' | ')}`, true);
+        setMessage(`Import sản phẩm hoàn tất: thành công ${success}, lỗi ${failed}. ${failures.slice(0, 2).join(' | ')}`, true);
       } else {
-        setMessage(`Import CSV thành công ${success} sản phẩm.`);
+        setMessage(`Import sản phẩm thành công ${success} dòng.`);
       }
     } catch (error) {
-      setMessage(`Import CSV thất bại: ${error.message}`, true);
+      setMessage(`Import sản phẩm thất bại: ${error.message}`, true);
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
+  const handleBulkStockOutFromFile = async () => {
+    if (!stockOutImportFile) {
+      setMessage('Vui lòng chọn file Excel/CSV trước khi xuất kho hàng loạt.', true);
+      return;
+    }
+
+    try {
+      setIsWorking(true);
+
+      const rawRows = await parseSpreadsheetFile(stockOutImportFile);
+      if (!rawRows.length) {
+        throw new Error('File xuất kho không có dữ liệu.');
+      }
+
+      const rows = rawRows.map((row) => {
+        const normalized = {};
+        Object.entries(row).forEach(([key, value]) => {
+          normalized[normalizeHeader(key)] = value;
+        });
+        return normalized;
+      });
+
+      const productByCode = {};
+      products.forEach((item) => {
+        productByCode[String(item.product_code || '').trim().toLowerCase()] = item;
+      });
+
+      const qtyByProductId = Object.fromEntries(products.map((item) => [item.product_id, Number(item.quantity || 0)]));
+
+      let success = 0;
+      let failed = 0;
+      const failures = [];
+
+      for (let i = 0; i < rows.length; i += 1) {
+        const row = rows[i];
+        const code = String(row.product_code || row.ma_san_pham || row.sku || '').trim();
+        const qtyRaw = row.export_quantity || row.so_luong_xuat || row.quantity || row.so_luong || '';
+        const exportQty = Number(qtyRaw);
+
+        if (!code) {
+          failed += 1;
+          failures.push(`Dòng ${i + 2}: thiếu product_code`);
+          continue;
+        }
+
+        if (!Number.isInteger(exportQty) || exportQty <= 0) {
+          failed += 1;
+          failures.push(`Dòng ${i + 2} (${code}): số lượng xuất không hợp lệ`);
+          continue;
+        }
+
+        const product = productByCode[code.toLowerCase()];
+        if (!product) {
+          failed += 1;
+          failures.push(`Dòng ${i + 2} (${code}): không tìm thấy sản phẩm`);
+          continue;
+        }
+
+        const currentQty = qtyByProductId[product.product_id] ?? Number(product.quantity || 0);
+        if (exportQty > currentQty) {
+          failed += 1;
+          failures.push(`Dòng ${i + 2} (${code}): vượt quá tồn hiện tại (${currentQty})`);
+          continue;
+        }
+
+        try {
+          const payload = buildProductUpdatePayload(product, Math.max(currentQty - exportQty, 0));
+          const response = await fetch(`${BACKEND_URL}/api/product/${product.product_id}`, {
+            method: 'PUT',
+            credentials: 'include',
+            body: payload,
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(result.message || `HTTP ${response.status}`);
+          }
+
+          qtyByProductId[product.product_id] = Math.max(currentQty - exportQty, 0);
+          success += 1;
+        } catch (error) {
+          failed += 1;
+          failures.push(`Dòng ${i + 2} (${code}): ${error.message}`);
+        }
+      }
+
+      await Promise.all([loadProducts(), loadSummary(), loadFefo(), loadImportHistory()]);
+
+      if (failed > 0) {
+        setMessage(`Xuất kho hàng loạt hoàn tất: thành công ${success}, lỗi ${failed}. ${failures.slice(0, 2).join(' | ')}`, true);
+      } else {
+        setMessage(`Xuất kho hàng loạt thành công ${success} dòng.`);
+      }
+    } catch (error) {
+      setMessage(`Xuất kho hàng loạt thất bại: ${error.message}`, true);
     } finally {
       setIsWorking(false);
     }
@@ -518,6 +735,10 @@ const StaffWorkspace = () => {
                 <h4>Nhập kho tháng</h4>
                 <p>{Number(summary.stats.monthly_import || 0).toLocaleString('vi-VN')}</p>
               </article>
+              <article className="kpi">
+                <h4>Tổng ước tính đã xuất kho</h4>
+                <p>{totalEstimatedExported.toLocaleString('vi-VN')}</p>
+              </article>
             </div>
 
             <section className="card" style={{ marginBottom: 14 }}>
@@ -527,6 +748,44 @@ const StaffWorkspace = () => {
                 values={summary.chart?.values || []}
                 label={summary.chart?.label || 'Số lượng'}
               />
+            </section>
+
+            <section className="card" style={{ marginBottom: 14 }}>
+              <h3>Cảnh báo tồn kho thấp hoặc đã hết</h3>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mã</th>
+                      <th>Tên sản phẩm</th>
+                      <th>Đơn vị</th>
+                      <th>Tồn hiện tại</th>
+                      <th>Cảnh báo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lowStockRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>Không có sản phẩm tồn thấp.</td>
+                      </tr>
+                    ) : (
+                      lowStockRows.map((item) => (
+                        <tr key={`low-stock-${item.product_id}`}>
+                          <td>{item.product_code}</td>
+                          <td>{item.product_name}</td>
+                          <td>{item.unit}</td>
+                          <td>{item.quantity}</td>
+                          <td>
+                            <span className={`badge ${item.quantity === 0 ? 'badge-danger' : 'badge-warning'}`}>
+                              {item.quantity === 0 ? 'Het hang' : 'Sap het hang'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </section>
 
             <div className="split">
@@ -631,7 +890,7 @@ const StaffWorkspace = () => {
             </p>
 
             <div className="card" style={{ marginBottom: 14 }}>
-              <h3>Import danh sách sản phẩm từ CSV</h3>
+              <h3>Import danh sách sản phẩm từ Excel/CSV</h3>
               <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>
                 Cột bắt buộc: product_code, product_name. Cột hỗ trợ: category_id/category_name, unit, purchase_price,
                 selling_price, quantity, expiry_date, image, description.
@@ -639,11 +898,28 @@ const StaffWorkspace = () => {
               <div className="btn-row">
                 <input
                   type="file"
-                  accept=".csv,text/csv"
-                  onChange={(event) => setCsvImportFile(event.target.files?.[0] || null)}
+                  accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={(event) => setProductImportFile(event.target.files?.[0] || null)}
                 />
-                <button type="button" className="btn btn-primary" onClick={handleCsvImportProducts} disabled={isWorking}>
-                  Import CSV
+                <button type="button" className="btn btn-primary" onClick={handleImportProductsFromFile} disabled={isWorking}>
+                  Import sản phẩm
+                </button>
+              </div>
+            </div>
+
+            <div className="card" style={{ marginBottom: 14 }}>
+              <h3>Xuất kho hàng loạt từ Excel/CSV</h3>
+              <p style={{ color: 'var(--ink-soft)', marginTop: 0 }}>
+                Cột bắt buộc: product_code và export_quantity (hoặc so_luong_xuat).
+              </p>
+              <div className="btn-row">
+                <input
+                  type="file"
+                  accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  onChange={(event) => setStockOutImportFile(event.target.files?.[0] || null)}
+                />
+                <button type="button" className="btn btn-primary" onClick={handleBulkStockOutFromFile} disabled={isWorking}>
+                  Xuất kho hàng loạt
                 </button>
               </div>
             </div>
@@ -680,6 +956,9 @@ const StaffWorkspace = () => {
                       <td>{item.expiry_date || '-'}</td>
                       <td>
                         <div className="btn-row">
+                          <button type="button" className="btn btn-primary" onClick={() => handleStockOutProduct(item)}>
+                            Xuất kho
+                          </button>
                           <button type="button" className="btn btn-secondary" onClick={() => openModal(item)}>
                             Sửa
                           </button>
@@ -747,7 +1026,11 @@ const StaffWorkspace = () => {
           </section>
         )}
 
-        {status.text ? <p className={`status-msg ${status.isError ? 'error' : ''}`}>{status.text}</p> : null}
+        {status.text ? (
+          <div className={`toast-notify ${status.isError ? 'toast-error' : 'toast-success'}`}>
+            {status.text}
+          </div>
+        ) : null}
       </main>
 
       {showModal && (

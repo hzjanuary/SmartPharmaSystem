@@ -444,6 +444,45 @@ body,
   color: var(--danger);
 }
 
+.toast-notify {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 12000;
+  min-width: 280px;
+  max-width: 520px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  animation: toast-slide-in 180ms ease;
+  font-weight: 600;
+}
+
+.toast-success {
+  background: #e9fbf1;
+  color: #155239;
+  border-color: #b5e6c8;
+}
+
+.toast-error {
+  background: #fff0f0;
+  color: #8f1f2e;
+  border-color: #f3b8c1;
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .product-thumb {
   width: 56px;
   height: 56px;

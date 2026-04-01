@@ -1,0 +1,11 @@
+﻿product_code,product_name,category_id,unit,purchase_price,selling_price,quantity,expiry_date,image,description
+DEMOA001,Paracetamol 650mg tác dụng nhanh,2,Hộp,24000,35000,130,2027-11-30,,Dữ liệu demo nhập kho đợt A
+DEMOA002,Vitamin C kẽm tăng đề kháng,3,Hộp,48000,69000,95,2028-03-31,,Dữ liệu demo nhập kho đợt A
+DEMOA003,Găng tay y tế nitrile cỡ M,4,Hộp,56000,82000,180,2030-06-30,,Dữ liệu demo nhập kho đợt A
+DEMOA004,Men tiêu hóa enzyme tổng hợp,8,Hộp,76000,112000,75,2028-08-31,,Dữ liệu demo nhập kho đợt A
+DEMOA005,Thuốc dị ứng Loratadine,9,Hộp,42000,63000,88,2027-09-30,,Dữ liệu demo nhập kho đợt A
+DEMOA006,Vitamin D3 nhỏ giọt cho bé,10,Chai,69000,98000,70,2028-01-31,,Dữ liệu demo nhập kho đợt A
+DEMOA007,Que test nhanh Covid,11,Hộp,18000,29000,260,2027-12-31,,Dữ liệu demo nhập kho đợt A
+DEMOA008,Sữa rửa mặt dịu nhẹ da nhạy cảm,12,Chai,118000,169000,66,2028-10-31,,Dữ liệu demo nhập kho đợt A
+DEMOA009,Combo hỗ trợ cảm cúm,7,Hộp,51000,76000,104,2028-05-31,,Dữ liệu demo nhập kho đợt A
+DEMOA010,Dung dịch rửa mắt vô trùng 250ml,4,Chai,22000,34000,140,2028-07-31,,Dữ liệu demo nhập kho đợt A
