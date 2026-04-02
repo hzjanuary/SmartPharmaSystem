@@ -6,4 +6,6 @@ router.get('/', auth.verifyLogin, auth.verifyManager, adminController.getAllUser
 
 router.put('/role', auth.verifyLogin, auth.verifyManager, adminController.updateRole);
 
+router.delete('/:userId', auth.verifyLogin, auth.verifyManager, adminController.deleteUser);
+
 module.exports = router;

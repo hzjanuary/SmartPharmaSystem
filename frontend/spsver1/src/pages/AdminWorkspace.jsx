@@ -237,6 +237,32 @@ const AdminWorkspace = () => {
     }
   };
 
+  const handleDeleteUser = async (user) => {
+    if (!user?.user_id) return;
+
+    const isSelf = currentUser?.username && currentUser.username === user.username;
+    if (isSelf) {
+      showStatus('Bạn không thể xóa tài khoản đang đăng nhập.', true);
+      return;
+    }
+
+    const shouldDelete = window.confirm(`Xác nhận xóa người dùng ${user.username}?`);
+    if (!shouldDelete) return;
+
+    try {
+      setIsWorking(true);
+      await requestJson(`${BACKEND_URL}/api/admin/${user.user_id}`, {
+        method: 'DELETE',
+      });
+      showStatus('Xóa người dùng thành công.');
+      await loadUsers();
+    } catch (error) {
+      showStatus(`Không thể xóa người dùng: ${error.message}`, true);
+    } finally {
+      setIsWorking(false);
+    }
+  };
+
   const handleSaveCategory = async (event) => {
     event.preventDefault();
     const payload = {
@@ -541,12 +567,13 @@ const AdminWorkspace = () => {
                         <th>Họ tên</th>
                         <th>Vai trò</th>
                         <th>Ngày tạo</th>
-                        <th>Cập nhật vai trò</th>
+                        <th>Thao tác</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.map((item) => {
                         const viewRole = fromBackendRole(item.role);
+                        const isSelf = currentUser?.username && currentUser.username === item.username;
                         return (
                           <tr key={item.user_id}>
                             <td>{item.user_id}</td>
@@ -559,13 +586,24 @@ const AdminWorkspace = () => {
                             </td>
                             <td>{formatDate(item.created_at)}</td>
                             <td>
-                              <select
-                                value={viewRole}
-                                onChange={(event) => handleChangeRole(item.user_id, event.target.value)}
-                              >
-                                <option value="admin">admin</option>
-                                <option value="staff">staff</option>
-                              </select>
+                              <div className="btn-row">
+                                <select
+                                  value={viewRole}
+                                  onChange={(event) => handleChangeRole(item.user_id, event.target.value)}
+                                  disabled={isWorking}
+                                >
+                                  <option value="admin">admin</option>
+                                  <option value="staff">staff</option>
+                                </select>
+                                <button
+                                  type="button"
+                                  className="btn btn-danger"
+                                  onClick={() => handleDeleteUser(item)}
+                                  disabled={isWorking || isSelf}
+                                >
+                                  Xóa
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

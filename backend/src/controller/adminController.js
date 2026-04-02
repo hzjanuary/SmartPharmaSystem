@@ -48,6 +48,39 @@ const adminController = {
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
+    },
+
+    // 🔹 DELETE USER (Manager only)
+    deleteUser: async (req, res) => {
+        try {
+            const userId = Number(req.params.userId);
+
+            if (!Number.isInteger(userId) || userId <= 0) {
+                return res.status(400).json({ message: "ID người dùng không hợp lệ!" });
+            }
+
+            if (req.session?.user?.id === userId) {
+                return res.status(400).json({ message: "Không thể xóa chính tài khoản đang đăng nhập!" });
+            }
+
+            const [user] = await db.query(
+                "SELECT user_id FROM user WHERE user_id = ?",
+                [userId]
+            );
+
+            if (user.length === 0) {
+                return res.status(404).json({ message: "User không tồn tại!" });
+            }
+
+            await db.query(
+                "DELETE FROM user WHERE user_id = ?",
+                [userId]
+            );
+
+            return res.status(200).json({ message: "Xóa user thành công!" });
+        } catch (error) {
+            return res.status(500).json({ error: error.message });
+        }
     }
 };
 
